@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/FileMetaData/.vs/FileMetaData/v15/.suo
+/FileMetaData/FileMetaData.csproj.user
