@@ -93,7 +93,7 @@ namespace FileZipUnzip
             {
                 zip.CompressionMethod = CompressionMethod.BZip2;
                 zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
-                foreach (FileInfo fi in di.GetFiles("*.*"))
+                foreach (FileInfo fi in di.GetFiles("*.*",SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
                     zip.AddFile(fi.FullName);
