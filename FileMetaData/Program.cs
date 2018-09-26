@@ -11,10 +11,11 @@ namespace FileMetaData
         static void Main(string[] args)
         {
             List<MetaData> metadata = GetMetaDataList();
-            string filepath = @"D:\Metadata\Test\testfile\test.txt";
-            // ApplyMetaData(filepath, metadata);
+            string filepath = @"D:\Metadata\Test\testfile\universe10e_ch03.ppt";
+            ApplyMetaData(filepath, metadata);
              metadata = ReadMetaData(filepath);
-            
+
+            //
         }
         public static void ApplyMetaData(string filepath, List<MetaData> lstmetadata)
         {
