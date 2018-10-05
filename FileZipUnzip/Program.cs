@@ -26,7 +26,7 @@ namespace FileZipUnzip
                 Console.Write("Enter your choice: ");
                 ConsoleKeyInfo input = Console.ReadKey();
                 Console.WriteLine("");
-                string filesfolder = @"D:\LogFile\Test";
+                string filesfolder = @"C:\DocumentSecurity\Logs\test";
                 string zipfilepath = string.Empty;
                 switch (input.KeyChar.ToString())
                 {
@@ -91,8 +91,8 @@ namespace FileZipUnzip
             //zip all file of di
             using (ZipFile zip = new ZipFile())
             {
-                zip.CompressionMethod = CompressionMethod.BZip2;
-                zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
+               //zip.CompressionMethod = CompressionMethod.BZip2;
+               //zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
                 foreach (FileInfo fi in di.GetFiles("*.*",SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
