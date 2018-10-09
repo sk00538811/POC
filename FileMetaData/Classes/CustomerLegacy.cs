@@ -15,7 +15,7 @@ namespace FileMetaData.Classes
 {
     public class CustomerLegacy
     {
-
+/*
         [XmlRoot(ElementName = "user1")]
         public class User1
         {
@@ -173,11 +173,11 @@ namespace FileMetaData.Classes
             [XmlElement(ElementName = "EmailContact")]
             public EmailContact EmailContact { get; set; }
         }
-
+        */
         [XmlRoot(ElementName = "individual")]
         public class Individual
         {
-            [XmlElement(ElementName = "secondaryId")]
+           /* [XmlElement(ElementName = "secondaryId")]
             public string SecondaryId { get; set; }
             [XmlElement(ElementName = "firstName")]
             public string FirstName { get; set; }
@@ -192,10 +192,10 @@ namespace FileMetaData.Classes
             [XmlElement(ElementName = "companySecId")]
             public string CompanySecId { get; set; }
             [XmlElement(ElementName = "companySfId")]
-            public string CompanySfId { get; set; }
+            public string CompanySfId { get; set; }*/
             [XmlElement(ElementName = "assignedId")]
             public string AssignedId { get; set; }
-            [XmlElement(ElementName = "cAcct")]
+           /* [XmlElement(ElementName = "cAcct")]
             public string CAcct { get; set; }
             [XmlElement(ElementName = "contactStatus")]
             public string ContactStatus { get; set; }
@@ -226,7 +226,7 @@ namespace FileMetaData.Classes
             [XmlElement(ElementName = "phones")]
             public string Phones { get; set; }
             [XmlElement(ElementName = "EmailContacts")]
-            public EmailContacts EmailContacts { get; set; }
+            public EmailContacts EmailContacts { get; set; }*/
             [XmlAttribute(AttributeName = "action")]
             public string Action { get; set; }
         }
