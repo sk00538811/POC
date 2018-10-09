@@ -91,8 +91,9 @@ namespace FileZipUnzip
             //zip all file of di
             using (ZipFile zip = new ZipFile())
             {
-               //zip.CompressionMethod = CompressionMethod.BZip2;
-               //zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
+                zip.UseZip64WhenSaving = Zip64Option.AsNecessary;
+                //zip.CompressionMethod = CompressionMethod.BZip2;
+                //zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
                 foreach (FileInfo fi in di.GetFiles("*.*",SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
