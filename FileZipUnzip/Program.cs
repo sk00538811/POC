@@ -91,14 +91,24 @@ namespace FileZipUnzip
             //zip all file of di
             using (ZipFile zip = new ZipFile())
             {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("Zip file contain only below list of file, Please check all files are present in the folder");
+                sb.Append( string.Format("{0}{1}", Environment.NewLine, string.Concat(Enumerable.Repeat("-", 79)))); 
+                sb.Append( string.Format("{0}Sno#\tFileName\tFile Size", Environment.NewLine));
+
                 zip.UseZip64WhenSaving = Zip64Option.AsNecessary;
                 //zip.CompressionMethod = CompressionMethod.BZip2;
                 //zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
+                int cnt = 1;
                 foreach (FileInfo fi in di.GetFiles("*.*",SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
                     zip.AddFile(fi.FullName);
+                    sb.Append(string.Format("{0}{1}\t{2}\t{3} byte",Environment.NewLine,cnt,fi.Name,fi.Length));
+                    cnt++;
                 }
+                ZipEntry e =   zip.AddEntry("log.txt" , sb.ToString());
+                e.Comment = "This entry in the zip archive was created to verify all file with its size";
                 zipfilepath = Path.Combine(di.FullName, Generate.AlphabateNumber(10, true) + ".zip");
                 zip.Save(Path.Combine(di.FullName, zipfilepath));
             }
