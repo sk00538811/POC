@@ -21,6 +21,8 @@ namespace FileZipUnzip
                 Console.WriteLine("1 - Zip files");
                 Console.WriteLine("2 - Upzip file");
                 Console.WriteLine("3 - split zip file");
+                Console.WriteLine("4 - Compress text");
+                Console.WriteLine("5 - Decompress text");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
@@ -67,6 +69,48 @@ namespace FileZipUnzip
                             Console.ReadLine();
                         }
                         break;
+                    case "4":
+                        {
+                            Console.Write("\nEnter file path that text you want to compress: ");
+                            zipfilepath = Console.ReadLine();
+
+                            FileInfo fi = new FileInfo(zipfilepath);
+                            if (fi.Exists)
+                            {
+                                Console.WriteLine(string.Format("\nFile Reading Start time:{0}, files path:{1}", DateTime.Now.ToString("o"), zipfilepath));
+                                string outputtext = TextCompressDecompress.Compress(File.ReadAllText(zipfilepath, Encoding.ASCII));
+                                string outputFilePath = Path.Combine(fi.DirectoryName, Guid.NewGuid() + ".txt");
+                                File.WriteAllText(outputFilePath, outputtext);
+                                Console.WriteLine(string.Format("\nOutput File with Compress text,End time:{0} , files path:{1}", DateTime.Now.ToString("o"), outputFilePath));
+
+                            }
+                            else { Console.WriteLine("\nFile not exist or invalid file path."); }
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "5":
+                        {
+                            Console.Write("\nEnter file path that text you want to decompress: ");
+                            zipfilepath = Console.ReadLine();
+
+                            FileInfo fi = new FileInfo(zipfilepath);
+                            if (fi.Exists)
+                            {
+                                Console.WriteLine(string.Format("\nFile Reading Start time:{0}, files path:{1}", DateTime.Now.ToString("o"), zipfilepath));
+                                string outputtext = TextCompressDecompress.Decompress(File.ReadAllText(zipfilepath, Encoding.ASCII));
+                                string outputFilePath = Path.Combine(fi.DirectoryName, Guid.NewGuid() + ".txt");
+                                File.WriteAllText(outputFilePath, outputtext);
+                                Console.WriteLine(string.Format("\nOutput File with Compress text,End time:{0} , files path:{1}", DateTime.Now.ToString("o"), outputFilePath));
+
+                            }
+                            else { Console.WriteLine("\nFile not exist or invalid file path."); }
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
                     case "0":
                         Console.Write("\nAre you sure you want to exit.(y/n)?");
                         input = Console.ReadKey();
@@ -93,21 +137,21 @@ namespace FileZipUnzip
             {
                 StringBuilder sb = new StringBuilder();
                 sb.Append("Zip file contain only below list of file, Please check all files are present in the folder");
-                sb.Append( string.Format("{0}{1}", Environment.NewLine, string.Concat(Enumerable.Repeat("-", 79)))); 
-                sb.Append( string.Format("{0}Sno#\tFileName\tFile Size", Environment.NewLine));
+                sb.Append(string.Format("{0}{1}", Environment.NewLine, string.Concat(Enumerable.Repeat("-", 79))));
+                sb.Append(string.Format("{0}Sno#\tFileName\tFile Size", Environment.NewLine));
 
                 zip.UseZip64WhenSaving = Zip64Option.AsNecessary;
                 //zip.CompressionMethod = CompressionMethod.BZip2;
                 //zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
                 int cnt = 1;
-                foreach (FileInfo fi in di.GetFiles("*.*",SearchOption.AllDirectories))
+                foreach (FileInfo fi in di.GetFiles("*.*", SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
                     zip.AddFile(fi.FullName);
-                    sb.Append(string.Format("{0}{1}\t{2}\t{3} byte",Environment.NewLine,cnt,fi.Name,fi.Length));
+                    sb.Append(string.Format("{0}{1}\t{2}\t{3} byte", Environment.NewLine, cnt, fi.Name, fi.Length));
                     cnt++;
                 }
-                ZipEntry e =   zip.AddEntry("log.txt" , sb.ToString());
+                ZipEntry e = zip.AddEntry("log.txt", sb.ToString());
                 e.Comment = "This entry in the zip archive was created to verify all file with its size";
                 zipfilepath = Path.Combine(di.FullName, Generate.AlphabateNumber(10, true) + ".zip");
                 zip.Save(Path.Combine(di.FullName, zipfilepath));
@@ -130,7 +174,7 @@ namespace FileZipUnzip
                 DirectoryInfo di = new DirectoryInfo(unzipfilepath);
                 if (!di.Exists) di.Create();
 
-                    using (var raw = File.Open(zipfilepath, FileMode.Open, FileAccess.Read))
+                using (var raw = File.Open(zipfilepath, FileMode.Open, FileAccess.Read))
                 {
                     using (var input = new ZipInputStream(raw))
                     {
@@ -138,8 +182,8 @@ namespace FileZipUnzip
                         while ((e = input.GetNextEntry()) != null)
                         {
                             if (e.IsDirectory) continue;
-                            string outputPath = Path.Combine(di.FullName, e.FileName.Replace("/","\\"));
-                            DirectoryInfo di_ = new DirectoryInfo(outputPath.Substring(0, outputPath.LastIndexOf("\\") ));
+                            string outputPath = Path.Combine(di.FullName, e.FileName.Replace("/", "\\"));
+                            DirectoryInfo di_ = new DirectoryInfo(outputPath.Substring(0, outputPath.LastIndexOf("\\")));
                             if (!di_.Exists) di_.Create();
                             using (var output = File.Open(outputPath, FileMode.Create, FileAccess.ReadWrite))
                             {
@@ -176,16 +220,18 @@ namespace FileZipUnzip
                 int SegmentsCreated;
                 using (ZipFile zip = new ZipFile())
                 {
-                    zip.AlternateEncoding = Encoding.UTF8 ;  // utf-8
+                    zip.AlternateEncoding = Encoding.UTF8;  // utf-8
                     zip.AddFile(fi.FullName);
                     zip.Comment = "This zip was created at " + System.DateTime.Now.ToString("G");
                     string filesize = GetSizeString(fi.Length);
-                    int size = 1024 ;
-                    if (filesize.Contains("MB")) {
-                        size = 100* 1024 * 1024;
-                    
-                    zip.MaxOutputSegmentSize = size; // 100 * 1024=100k segments
-                    }zip.Save(Path.Combine(di.FullName, fi.Name));
+                    int size = 1024;
+                    if (filesize.Contains("MB"))
+                    {
+                        size = 100 * 1024 * 1024;
+
+                        zip.MaxOutputSegmentSize = size; // 100 * 1024=100k segments
+                    }
+                    zip.Save(Path.Combine(di.FullName, fi.Name));
 
                     SegmentsCreated = zip.NumberOfSegmentsForMostRecentSave;
                 }
@@ -203,12 +249,12 @@ namespace FileZipUnzip
 
             if (length >= TB)
             {
-                size = Math.Round((double)length / TB*1024*1024, 2);
+                size = Math.Round((double)length / TB * 1024 * 1024, 2);
                 suffix = nameof(MB);
             }
             else if (length >= GB)
             {
-                size = Math.Round((double)length / GB * 1024 , 2);
+                size = Math.Round((double)length / GB * 1024, 2);
                 suffix = nameof(MB);
             }
             else if (length >= MB)
@@ -221,8 +267,8 @@ namespace FileZipUnzip
                 size = Math.Round((double)length / KB, 2);
                 suffix = nameof(KB);
             }
-             
-            return  $"{size} {suffix}" ;
+
+            return $"{size} {suffix}";
         }
     }
 }
