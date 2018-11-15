@@ -19,7 +19,7 @@ namespace FileMetaData
         {
 
             string filepath = string.Empty; //@"D:\Metadata\Test\testfile\universe10e_ch03.ppt";
-            List<MetaData> metadata = GetMetaDataList();
+            List<DocumentData> metadata = GetMetaDataList();
             string loop = "n";
             FileInfo fi = null;
             do
@@ -28,8 +28,9 @@ namespace FileMetaData
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine("1 - files metadata on file");
                 Console.WriteLine("2 - Read file metadata");
-                Console.WriteLine("3 - Fetch the SFDC 18 Dig Id(SalesForceID) using the OnyxCustomerId value");
-                Console.WriteLine("4 - DocumentSecurity Metadata/Read API");
+                Console.WriteLine("3 - Read file metadata after url download");
+                Console.WriteLine("4 - Fetch the SFDC 18 Dig Id(SalesForceID) using the OnyxCustomerId value");
+                Console.WriteLine("6 - DocumentSecurity Metadata/Read API");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
@@ -42,14 +43,26 @@ namespace FileMetaData
                     case "1":
                         {
                             Console.Write("\nEnter file path to apply metadata: ");
-                            filepath = @"C:\DocumentSecurity\Logs\test\Answers_workbook.pdf";// Console.ReadLine();
+                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";//Answers_workbook.pdf Console.ReadLine();
+                            string outputfilename=@"C:\DocumentSecurity\Logs\test\b\Answers_workbook.pdf";
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
                             if (!string.IsNullOrEmpty(filepath) && fi.Exists)
                             {
                                 metadata = GetMetaDataList();
                                 Console.WriteLine(string.Format("\n File Applymetadata  Start time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
-                                ApplyMetaData(fi.FullName, metadata);
+                                switch (fi.Extension.ToUpper())
+                                {
+                                    case ".DOC":
+                                    case ".XLS":
+                                    case ".PPT":
+                                        //ApplyMetaDataInComments(fi.FullName, metadata);
+                                        ApplyMetaData(fi.FullName, metadata);
+                                        break;
+                                    case ".PDF":
+                                        ApplyMetaDataInPDF(fi.FullName, outputfilename, metadata);
+                                        break;
+                                }
                                 Console.WriteLine(string.Format("File Applymetadata End time:{0} , file path:{1}", DateTime.Now.ToString("o"), fi.FullName));
                                 Console.WriteLine("-----------------output------------------------");
                                 Console.WriteLine("Please check file: {0} ", fi.FullName);
@@ -63,20 +76,31 @@ namespace FileMetaData
 
                     case "2":
                         {
-                            Console.Write("\nEnter file path to apply metadata: ");
-                            filepath = @"C:\Users\sk00538811\Downloads\Answers_workbook.pdf";// Console.ReadLine();
+                            Console.Write("\nEnter file path to read metadata: ");
+                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";//Answers_workbook.pdf Console.ReadLine();
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
-                            if (!string.IsNullOrEmpty(filepath) && fi.Exists) 
-                                {
+                            if (!string.IsNullOrEmpty(filepath) && fi.Exists)
+                            {
                                 Console.WriteLine(string.Format("\nRead File Metadata Start time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
-                                metadata = ReadMetaData(fi.FullName);
+                                switch (fi.Extension.ToUpper())
+                                {
+                                    case ".DOC":
+                                    case ".XLS":
+                                    case ".PPT":
+                                       // metadata = ReadMetaDataInComments(fi.FullName);
+                                        metadata = ReadMetaData(fi.FullName);
+                                        break;
+                                    case ".PDF":
+                                     metadata =    ReadMetaDataFromPDF(fi.FullName,  metadata);
+                                        break;
+                                }
                                 Console.WriteLine(string.Format("\nRead File Metadata End time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
                                 Console.WriteLine("-----------------output------------------------");
                                 Console.WriteLine("---Key----\t|\t------Value---- ");
-                                foreach (MetaData md in metadata)
+                                foreach (DocumentData md in metadata)
                                 {
-                                    Console.WriteLine("  {0}\t|\t{1} ", md.Text, md.Value);
+                                    Console.WriteLine("  {0}\t|\t{1} ", md.Key, md.Text);
                                 }
                             }
                             else { Console.WriteLine("File path you have given not exists..."); }
@@ -85,8 +109,45 @@ namespace FileMetaData
                             Console.ReadLine();
                         }
                         break;
-
                     case "3":
+                        {
+                            Console.Write("\nEnter file url to read metadata: ");
+                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";// Console.ReadLine();
+                            string url = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.doc";//Answers_workbook.pdf
+                            filepath = DownloadFileFromServer(url, "ttt");
+                            Console.Write("\nFile Path:{0} ", filepath);
+                            fi = new FileInfo(filepath);
+                            if (!string.IsNullOrEmpty(filepath) && fi.Exists)
+                            {
+                                Console.WriteLine(string.Format("\nRead File Metadata Start time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
+                                switch (fi.Extension.ToUpper())
+                                {
+                                    case ".DOC":
+                                    case ".XLS":
+                                    case ".PPT":
+                                      //  metadata = ReadMetaDataInComments(fi.FullName);
+                                        metadata = ReadMetaData(fi.FullName);
+                                        break;
+                                    case ".PDF":
+                                        metadata = ReadMetaDataFromPDF(fi.FullName, metadata);
+                                        break;
+                                }
+                               
+                                Console.WriteLine(string.Format("\nRead File Metadata End time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
+                                Console.WriteLine("-----------------output------------------------");
+                                Console.WriteLine("---Key----\t|\t------Value---- ");
+                                foreach (DocumentData md in metadata)
+                                {
+                                    Console.WriteLine("  {0}\t|\t{1} ", md.Key, md.Text);
+                                }
+                            }
+                            else { Console.WriteLine("File path you have given not exists..."); }
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "4":
                         {
                             Console.Write("\nEnter OnyxCustomerId: ");
                             string OnyxCustomerId = Console.ReadLine();//24073460
@@ -102,11 +163,11 @@ namespace FileMetaData
                             Console.ReadLine();
                         }
                         break;
-                    case "4":
+                    case "5":
                         {    //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
                             // "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
                             //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/221dc991-ae8c-4a10-8108-1c95a0723fdf.zip";
-                            string sourceFileUrl = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
+                            string sourceFileUrl = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
                             string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
                             string api_requestUri = "Metadata/Read";
                             MetadataParamWithDocumnetData parameters = new MetadataParamWithDocumnetData();
@@ -225,7 +286,7 @@ namespace FileMetaData
             return oIndividual;
         }
 
-        public static void ApplyMetaData(string filepath, List<MetaData> lstmetadata)
+        public static void ApplyMetaData(string filepath, List<DocumentData> lstmetadata)
         {
             bool ispropfound = false;
             OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
@@ -241,7 +302,7 @@ namespace FileMetaData
                 }
                 if (!ispropfound)//add property
                 {
-                    object objValue = metadata.Value;
+                    object objValue = metadata.Text;
                     myFile.CustomProperties.Add(metadata.Text, ref objValue);
                 }
             }
@@ -250,38 +311,157 @@ namespace FileMetaData
 
 
         }
-        public static List<MetaData> ReadMetaData(string filepath)
+        public static MetadataResult ApplyMetaDataInPDF(string filepath, string outputfilename, List<DocumentData> lstmetadata)
         {
-            List<MetaData> lstmetadata = new List<MetaData>();
+
+            iTextSharpUtility oITextsharpUtility = new iTextSharpUtility();
+          MetadataResult rsltMetadataResult=  oITextsharpUtility.ApplyMetaData(filepath, outputfilename , lstmetadata);
+            return rsltMetadataResult;
+
+        }
+        public static List<DocumentData> ReadMetaDataFromPDF(string filepath, List<DocumentData> lstmetadata)
+        {
+
+            List<string> metadataCollection = new List<string>();
+            foreach (DocumentData dd in lstmetadata)
+            {
+                metadataCollection.Add(dd.Key);
+            }
+            iTextSharpUtility oITextsharpUtility = new iTextSharpUtility();
+            MetadataResult rsltMetadataResult = oITextsharpUtility.ReadMetaData(filepath, metadataCollection);
+            lstmetadata = rsltMetadataResult.MetaData;
+            return lstmetadata;
+        }
+
+        /// <summary>
+        /// Description: its works for DOC,PPT,XLS
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        public static void ApplyMetaDataInComments(string filepath, List<DocumentData> lstmetadata)
+        {
 
             OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
             myFile.Open(filepath, false, DSOFile.dsoFileOpenOptions.dsoOptionDefault);
+            /* 
+               bool ispropfound = false;
+              foreach (var metadata in lstmetadata)
+              {
+                ispropfound = false;
+                foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
+                {
+                    if (property.Name.ToUpper() == metadata.Text.ToUpper())
+                    { ispropfound = true; break; }
 
-            foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
-            {
-                lstmetadata.Add(new MetaData { Text = property.Name, Value = Convert.ToString(property.get_Value()) });
-            }
-
-
+                }
+                if (!ispropfound)//add property
+                {
+                    object objValue = metadata.Value;
+                    myFile.CustomProperties.Add(metadata.Text, ref objValue);
+                }
+            }*/
+            myFile.SummaryProperties.Comments = JsonConvert.SerializeObject(lstmetadata);
+            myFile.SummaryProperties.Title = JsonConvert.SerializeObject(lstmetadata);
             myFile.Save();
             myFile.Close(true);
 
+
+        }
+        /// <summary>
+        /// Description: its works for DOC,PPT,XLS
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        public static List<DocumentData> ReadMetaDataInComments(string filepath)
+        {
+            List<DocumentData> lstmetadata = new List<DocumentData>();
+
+            OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
+
+            myFile.Open(filepath, true, DSOFile.dsoFileOpenOptions.dsoOptionOpenReadOnlyIfNoWriteAccess);
+
+            /* foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
+             {
+                 lstmetadata.Add(new DocumentData { Text = property.Name, Value = Convert.ToString(property.get_Value()) });
+             }
+             */
+            string data = "";
+            if (!string.IsNullOrEmpty(myFile.SummaryProperties.Comments))
+                data = myFile.SummaryProperties.Comments;
+            if (!string.IsNullOrEmpty(myFile.SummaryProperties.Title))
+                data = myFile.SummaryProperties.Title;
+            lstmetadata = JsonConvert.DeserializeObject<List<DocumentData>>(data);
+            myFile.Close();
+
+
             return lstmetadata;
         }
-        public static List<MetaData> GetMetaDataList()
+        public static List<DocumentData> ReadMetaData(string filepath)
         {
-            List<MetaData> metadata = new List<MetaData>();
-            metadata.Add(new MetaData { Text = "CopyRight", Value = "2018" });
-            metadata.Add(new MetaData { Text = "CompanyName", Value = "Macmillan Learning" });
-            metadata.Add(new MetaData { Text = "CreatedOn", Value = "14-oct-2018" });
-            metadata.Add(new MetaData { Text = "RequestId", Value = "1232" });
-            metadata.Add(new MetaData { Text = "RequestDate", Value = "14-nov-2018" });
+            List<DocumentData> lstmetadata = new List<DocumentData>();
+
+            OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
+            myFile.Open(filepath, true, DSOFile.dsoFileOpenOptions.dsoOptionDefault);
+
+            foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
+            {
+                lstmetadata.Add(new DocumentData { Key = property.Name, Text = Convert.ToString(property.get_Value()) });
+            }
+
+           
+            myFile.Close();
+
+            return lstmetadata;
+        }
+        public static List<DocumentData> GetMetaDataList()
+        {
+            List<DocumentData> metadata = new List<DocumentData>();
+            metadata.Add(new DocumentData { Key = "CopyRight", Text = "2018" });
+            metadata.Add(new DocumentData { Key = "CompanyName", Text = "Macmillan Learning" });
+            metadata.Add(new DocumentData { Key = "CreatedOn", Text = "14-oct-2018" });
+            metadata.Add(new DocumentData { Key = "RequestId", Text = "1232" });
+            metadata.Add(new DocumentData { Key = "RequestDate", Text = "14-nov-2018" });
             return metadata;
         }
-        public class MetaData
+        public static string DownloadFileFromServer(string url, string userId)
         {
-            public string Text { get; set; }
-            public string Value { get; set; }
+            string TempFilePath = @"C:\DocumentSecurity\Logs\";
+            string fileName = string.Empty;
+
+            try
+            {
+                fileName = url.Split('/').LastOrDefault();
+
+                using (WebClient wc = new WebClient())
+                {
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        fileName = TempFilePath + userId + "\\" + fileName;
+                        if (!Directory.Exists(TempFilePath + userId))
+                        {
+                            Directory.CreateDirectory(TempFilePath + userId);
+                        }
+
+                        if (File.Exists(fileName))
+                        {
+                            File.Delete(fileName);
+
+                        }
+                        wc.DownloadFile(url, fileName);
+                    }
+                    else
+                    {
+                        return string.Empty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
+
+            return fileName;
         }
+
     }
 }
