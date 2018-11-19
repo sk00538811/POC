@@ -23,14 +23,17 @@ namespace FileMetaData
             string loop = "n";
             FileInfo fi = null;
             do
-            {
+            {filepath = string.Empty;
                 Console.Clear();
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine("1 - files metadata on file");
                 Console.WriteLine("2 - Read file metadata");
                 Console.WriteLine("3 - Read file metadata after url download");
                 Console.WriteLine("4 - Fetch the SFDC 18 Dig Id(SalesForceID) using the OnyxCustomerId value");
+                Console.WriteLine("5 - DocumentSecurity Metadata/Apply API");
                 Console.WriteLine("6 - DocumentSecurity Metadata/Read API");
+                Console.WriteLine("7 - Microsoft.Office.Interop dll Convert doc,xls and ppt file to docx, xlsx, and pptx");
+                Console.WriteLine("8 - opensource Convert doc,xls and ppt file to docx, xlsx, and pptx");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
@@ -43,12 +46,12 @@ namespace FileMetaData
                     case "1":
                         {
                             Console.Write("\nEnter file path to apply metadata: ");
-                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";//Answers_workbook.pdf Console.ReadLine();
-                            string outputfilename=@"C:\DocumentSecurity\Logs\test\b\Answers_workbook.pdf";
+                            filepath =  Console.ReadLine();
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
                             if (!string.IsNullOrEmpty(filepath) && fi.Exists)
                             {
+                            string outputfilename =Path.Combine(fi.DirectoryName, "Output_"+fi.Name) ;
                                 metadata = GetMetaDataList();
                                 Console.WriteLine(string.Format("\n File Applymetadata  Start time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
                                 switch (fi.Extension.ToUpper())
@@ -61,6 +64,7 @@ namespace FileMetaData
                                         break;
                                     case ".PDF":
                                         ApplyMetaDataInPDF(fi.FullName, outputfilename, metadata);
+                                        Console.WriteLine("Please check output file: {0} ", outputfilename);
                                         break;
                                 }
                                 Console.WriteLine(string.Format("File Applymetadata End time:{0} , file path:{1}", DateTime.Now.ToString("o"), fi.FullName));
@@ -77,7 +81,7 @@ namespace FileMetaData
                     case "2":
                         {
                             Console.Write("\nEnter file path to read metadata: ");
-                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";//Answers_workbook.pdf Console.ReadLine();
+                            filepath =  Console.ReadLine();
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
                             if (!string.IsNullOrEmpty(filepath) && fi.Exists)
@@ -88,11 +92,11 @@ namespace FileMetaData
                                     case ".DOC":
                                     case ".XLS":
                                     case ".PPT":
-                                       // metadata = ReadMetaDataInComments(fi.FullName);
+                                        // metadata = ReadMetaDataInComments(fi.FullName);
                                         metadata = ReadMetaData(fi.FullName);
                                         break;
                                     case ".PDF":
-                                     metadata =    ReadMetaDataFromPDF(fi.FullName,  metadata);
+                                        metadata = ReadMetaDataFromPDF(fi.FullName, metadata);
                                         break;
                                 }
                                 Console.WriteLine(string.Format("\nRead File Metadata End time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
@@ -112,8 +116,8 @@ namespace FileMetaData
                     case "3":
                         {
                             Console.Write("\nEnter file url to read metadata: ");
-                            filepath = @"C:\DocumentSecurity\Logs\test\w.doc";// Console.ReadLine();
-                            string url = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.doc";//Answers_workbook.pdf
+                          string  url =  Console.ReadLine();
+                           //  url = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w1.doc";//Answers_workbook.pdf
                             filepath = DownloadFileFromServer(url, "ttt");
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
@@ -125,14 +129,14 @@ namespace FileMetaData
                                     case ".DOC":
                                     case ".XLS":
                                     case ".PPT":
-                                      //  metadata = ReadMetaDataInComments(fi.FullName);
+                                        //  metadata = ReadMetaDataInComments(fi.FullName);
                                         metadata = ReadMetaData(fi.FullName);
                                         break;
                                     case ".PDF":
                                         metadata = ReadMetaDataFromPDF(fi.FullName, metadata);
                                         break;
                                 }
-                               
+
                                 Console.WriteLine(string.Format("\nRead File Metadata End time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
                                 Console.WriteLine("-----------------output------------------------");
                                 Console.WriteLine("---Key----\t|\t------Value---- ");
@@ -167,7 +171,38 @@ namespace FileMetaData
                         {    //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
                             // "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
                             //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/221dc991-ae8c-4a10-8108-1c95a0723fdf.zip";
-                            string sourceFileUrl = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
+                            string sourceFileUrl = Console.ReadLine();// "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
+                            string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
+                            string api_requestUri = "Metadata/Apply";
+                            MetadataParamBatch oMetadataParamBatch = new MetadataParamBatch();
+                            oMetadataParamBatch.UserRAId = "1212";
+                            List<MetadataParam> lstMetaDataParam = new List<MetadataParam>();
+                            lstMetaDataParam.Add(new MetadataParam { documentType = DocumentType.Word, InputFileName = sourceFileUrl, ResourceType = "IR", ResourceName = "test" });
+                            oMetadataParamBatch.MetadataParams = lstMetaDataParam;
+                            List<DocumentData> metadataCollection = new List<DocumentData>(){
+                                new DocumentData{Key="CopyRight", Text="2018" },
+                                new DocumentData{Key="CompanyName" , Text="Macmillan Learning"},
+                                new DocumentData{Key="CreatedOn", Text="16-Nov-2018" },
+                                new DocumentData{Key="RequestId" , Text="11111"},
+                                new DocumentData{Key="RequestDate" , Text="16-Nov-2018"} };
+
+                            oMetadataParamBatch.MetadataCollection = metadataCollection;
+
+                            Console.WriteLine(sourceFileUrl);
+                            Console.WriteLine("");
+                             string strresult = Webapicall_ApplyMetaData(api_baseAddressUrl, api_requestUri, oMetadataParamBatch);
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(strresult);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "6":
+                        {    //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
+                            // "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
+                            //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/221dc991-ae8c-4a10-8108-1c95a0723fdf.zip";
+                            string sourceFileUrl = Console.ReadLine(); //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
                             string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
                             string api_requestUri = "Metadata/Read";
                             MetadataParamWithDocumnetData parameters = new MetadataParamWithDocumnetData();
@@ -185,9 +220,56 @@ namespace FileMetaData
                             Console.WriteLine("");
                             parameters.OutputFileName = sourceFileUrl;
                             parameters.documentType = DocumentType.ZIP;
-                            string strresult = Webapicall1(api_baseAddressUrl, api_requestUri, parameters);
+                            string strresult = Webapicall_ReadMetaData(api_baseAddressUrl, api_requestUri, parameters);
                             Console.WriteLine("-----------------output------------------------");
                             Console.WriteLine(strresult);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "7":
+                        {
+                            Console.Write("\nEnter file path of doc,xls or ppt: ");
+                            filepath = Console.ReadLine();
+                              fi = new FileInfo(filepath);
+                            switch (fi.Extension.ToUpper())
+                            {
+                                case ".DOC":
+                                    { filepath= TransformNewOfficeDocument.DOCToDOCX(fi.FullName); }
+                                    break;
+                                case ".XLS":
+                                    {  filepath=TransformNewOfficeDocument.XLSToXLSX(fi.FullName);}
+                                    break;
+                                case ".PPT":
+                                    { filepath= TransformNewOfficeDocument.PPTToPPTX(fi.FullName);}
+                                    break;
+                            }
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(filepath);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }break;
+                    case "8":
+                        {
+                            Console.Write("\nEnter file path of doc,xls or ppt: ");
+                            filepath = Console.ReadLine();
+                              fi = new FileInfo(filepath);
+                            switch (fi.Extension.ToUpper())
+                            {
+                                case ".DOC":
+                                    { filepath= TransformNewOfficeDocument_OpenSource.DOCToDOCX(fi.FullName); }
+                                    break;
+                                case ".XLS":
+                                    {  filepath=TransformNewOfficeDocument.XLSToXLSX(fi.FullName);}
+                                    break;
+                                case ".PPT":
+                                    { filepath= TransformNewOfficeDocument.PPTToPPTX(fi.FullName);}
+                                    break;
+                            }
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(filepath);
 
                             Console.WriteLine("Press Enter key to return main menu...");
                             Console.ReadLine();
@@ -205,7 +287,43 @@ namespace FileMetaData
             } while (loop != "y");
             //
         }
-        private static string Webapicall1(string baseAddressUrl, string requestUri, MetadataParamWithDocumnetData param)
+        private static string Webapicall_ApplyMetaData(string baseAddressUrl, string requestUri, MetadataParamBatch param)
+        {
+            string strresult = String.Empty;
+
+            try
+            {
+                using (HttpClient httpClient = new HttpClient())
+                {
+                    httpClient.BaseAddress = new Uri(baseAddressUrl);
+
+                    // Create POST data and convert it to a byte array.
+                    string postData = JsonConvert.SerializeObject(param);// IRDownloadFinalData
+                    byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(postData);
+
+                    // Set the ContentType property of the WebRequest.
+                    var content = new StringContent(postData, Encoding.UTF8, "application/json");
+
+
+                    httpClient.Timeout = new TimeSpan(0, 15, 0);
+                    HttpResponseMessage httpResponseMessage = httpClient.PostAsync(requestUri, content).Result;
+                    httpResponseMessage.Content.ReadAsStringAsync().Wait();
+
+
+                    Task<string> response = httpResponseMessage.Content.ReadAsStringAsync();
+
+
+                    MetadataResultList bsObj = JsonConvert.DeserializeObject<MetadataResultList>(response.Result.ToString());
+                    strresult = JsonConvert.SerializeObject(bsObj);
+
+
+
+                }
+            }
+            catch { }
+            return strresult;
+        }
+        private static string Webapicall_ReadMetaData(string baseAddressUrl, string requestUri, MetadataParamWithDocumnetData param)
         {
             string strresult = String.Empty;
 
@@ -296,14 +414,14 @@ namespace FileMetaData
                 ispropfound = false;
                 foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
                 {
-                    if (property.Name.ToUpper() == metadata.Text.ToUpper())
+                    if (property.Name.ToUpper() == metadata.Key.ToUpper())
                     { ispropfound = true; break; }
 
                 }
                 if (!ispropfound)//add property
                 {
                     object objValue = metadata.Text;
-                    myFile.CustomProperties.Add(metadata.Text, ref objValue);
+                    myFile.CustomProperties.Add(metadata.Key, ref objValue);
                 }
             }
             myFile.Save();
@@ -311,11 +429,28 @@ namespace FileMetaData
 
 
         }
+        public static List<DocumentData> ReadMetaData(string filepath)
+        {
+            List<DocumentData> lstmetadata = new List<DocumentData>();
+
+            OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
+            myFile.Open(filepath, true, DSOFile.dsoFileOpenOptions.dsoOptionDefault);
+
+            foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
+            {
+                lstmetadata.Add(new DocumentData { Key = property.Name, Text = Convert.ToString(property.get_Value()) });
+            }
+
+
+            myFile.Close();
+
+            return lstmetadata;
+        }
         public static MetadataResult ApplyMetaDataInPDF(string filepath, string outputfilename, List<DocumentData> lstmetadata)
         {
 
             iTextSharpUtility oITextsharpUtility = new iTextSharpUtility();
-          MetadataResult rsltMetadataResult=  oITextsharpUtility.ApplyMetaData(filepath, outputfilename , lstmetadata);
+            MetadataResult rsltMetadataResult = oITextsharpUtility.ApplyMetaData(filepath, outputfilename, lstmetadata);
             return rsltMetadataResult;
 
         }
@@ -393,23 +528,6 @@ namespace FileMetaData
             lstmetadata = JsonConvert.DeserializeObject<List<DocumentData>>(data);
             myFile.Close();
 
-
-            return lstmetadata;
-        }
-        public static List<DocumentData> ReadMetaData(string filepath)
-        {
-            List<DocumentData> lstmetadata = new List<DocumentData>();
-
-            OleDocumentProperties myFile = new DSOFile.OleDocumentProperties();
-            myFile.Open(filepath, true, DSOFile.dsoFileOpenOptions.dsoOptionDefault);
-
-            foreach (DSOFile.CustomProperty property in myFile.CustomProperties)
-            {
-                lstmetadata.Add(new DocumentData { Key = property.Name, Text = Convert.ToString(property.get_Value()) });
-            }
-
-           
-            myFile.Close();
 
             return lstmetadata;
         }
