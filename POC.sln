@@ -9,6 +9,30 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileInfoUpdateDB", "FileInf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileZipUnzip", "FileZipUnzip\FileZipUnzip.csproj", "{ED2A28AC-91FF-49B4-A229-527D63087139}"
 EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "WebSite_Auth", "c:\Users\sk00538811\source\WebSitesRND\WebSite_Auth\", "{35FCBC75-8FE4-4BC5-80CC-D290F93E228F}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_50192"
+		Debug.AspNetCompiler.PhysicalPath = "c:\Users\sk00538811\source\WebSitesRND\WebSite_Auth\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_50192\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_50192"
+		Release.AspNetCompiler.PhysicalPath = "c:\Users\sk00538811\source\WebSitesRND\WebSite_Auth\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_50192\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "50192"
+		SlnRelativePath = "c:\Users\sk00538811\source\WebSitesRND\WebSite_Auth\"
+		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentSecurity.WebService", "DocumentSecurity.WebService\DocumentSecurity.WebService.csproj", "{679F4D94-44B0-474A-B28E-B2C779BBC34A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +51,14 @@ Global
 		{ED2A28AC-91FF-49B4-A229-527D63087139}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED2A28AC-91FF-49B4-A229-527D63087139}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED2A28AC-91FF-49B4-A229-527D63087139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35FCBC75-8FE4-4BC5-80CC-D290F93E228F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35FCBC75-8FE4-4BC5-80CC-D290F93E228F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35FCBC75-8FE4-4BC5-80CC-D290F93E228F}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{35FCBC75-8FE4-4BC5-80CC-D290F93E228F}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{679F4D94-44B0-474A-B28E-B2C779BBC34A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{679F4D94-44B0-474A-B28E-B2C779BBC34A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{679F4D94-44B0-474A-B28E-B2C779BBC34A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{679F4D94-44B0-474A-B28E-B2C779BBC34A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
