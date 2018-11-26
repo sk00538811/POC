@@ -134,6 +134,10 @@ namespace DocumentSecurity.WebService.DataAccess
             }
             return ol;
         }
+        public bool CreateUser(MyUser user ) {
+            bool flag = false;
 
+            return flag;
+        }
     }
 }

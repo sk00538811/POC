@@ -10,6 +10,7 @@ using FileMetaData.Classes;
 using System.Net.Http;
 using Newtonsoft.Json;
 using DocumentSecurity.BusinessObjects;
+using Newtonsoft.Json.Linq;
 
 namespace FileMetaData
 {
@@ -22,8 +23,10 @@ namespace FileMetaData
             List<DocumentData> metadata = GetMetaDataList();
             string loop = "n";
             FileInfo fi = null;
+            string GlobalAPITken = "3DbjvtceazqibXkOYX2lpbKCkeXdGXyweIBdtIgc15k715v56cNOdgA3bQhNdUp4DRl9MCPJHAsL4yMYXYTzyF3OQoKp17Ifi0c-3zgWb9QuUHAF73EYhAyU3Cps3sax5EEf9OHB95O9_9XhEWki1XLJjKaaN1N-NBOxRDG2XbpxlYIHq1YarZCXeVv69jx8ChB-Ltm-WCPRiP2LKJPYPLQuRI_qUGa3wIu7u2f-fouJRANRt1aa2y8oh5oaw_dNI4tVAnOpbhY9ly2wJFuYJfXs7cFAPZYqSlb254n7qow";
             do
-            {filepath = string.Empty;
+            {
+                filepath = string.Empty;
                 Console.Clear();
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine("1 - files metadata on file");
@@ -34,24 +37,26 @@ namespace FileMetaData
                 Console.WriteLine("6 - DocumentSecurity Metadata/Read API");
                 Console.WriteLine("7 - Microsoft.Office.Interop dll Convert doc,xls and ppt file to docx, xlsx, and pptx");
                 Console.WriteLine("8 - opensource Convert doc,xls and ppt file to docx, xlsx, and pptx");
+                Console.WriteLine("9 - DocumentSecurity Token API");
+                Console.WriteLine("10 - Call DocumentSecurity api/Account/CurrentUser API");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
-                ConsoleKeyInfo input = Console.ReadKey();
+                string input = Console.ReadLine();
                 Console.WriteLine("");
                 string filesfolder = @"C:\DocumentSecurity\Logs\test\Instructor_Resource_PDFs";
                 string zipfilepath = string.Empty;
-                switch (input.KeyChar.ToString())
+                switch (input.ToString())
                 {
                     case "1":
                         {
                             Console.Write("\nEnter file path to apply metadata: ");
-                            filepath =  Console.ReadLine();
+                            filepath = Console.ReadLine();
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
                             if (!string.IsNullOrEmpty(filepath) && fi.Exists)
                             {
-                            string outputfilename =Path.Combine(fi.DirectoryName, "Output_"+fi.Name) ;
+                                string outputfilename = Path.Combine(fi.DirectoryName, "Output_" + fi.Name);
                                 metadata = GetMetaDataList();
                                 Console.WriteLine(string.Format("\n File Applymetadata  Start time:{0}, files folder", DateTime.Now.ToString("o"), fi.FullName));
                                 switch (fi.Extension.ToUpper())
@@ -81,7 +86,7 @@ namespace FileMetaData
                     case "2":
                         {
                             Console.Write("\nEnter file path to read metadata: ");
-                            filepath =  Console.ReadLine();
+                            filepath = Console.ReadLine();
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
                             if (!string.IsNullOrEmpty(filepath) && fi.Exists)
@@ -116,8 +121,8 @@ namespace FileMetaData
                     case "3":
                         {
                             Console.Write("\nEnter file url to read metadata: ");
-                          string  url =  Console.ReadLine();
-                           //  url = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w1.doc";//Answers_workbook.pdf
+                            string url = Console.ReadLine();
+                            //  url = "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w1.doc";//Answers_workbook.pdf
                             filepath = DownloadFileFromServer(url, "ttt");
                             Console.Write("\nFile Path:{0} ", filepath);
                             fi = new FileInfo(filepath);
@@ -190,7 +195,7 @@ namespace FileMetaData
 
                             Console.WriteLine(sourceFileUrl);
                             Console.WriteLine("");
-                             string strresult = Webapicall_ApplyMetaData(api_baseAddressUrl, api_requestUri, oMetadataParamBatch);
+                            string strresult = Webapicall_ApplyMetaData(api_baseAddressUrl, api_requestUri, oMetadataParamBatch);
                             Console.WriteLine("-----------------output------------------------");
                             Console.WriteLine(strresult);
 
@@ -232,40 +237,17 @@ namespace FileMetaData
                         {
                             Console.Write("\nEnter file path of doc,xls or ppt: ");
                             filepath = Console.ReadLine();
-                              fi = new FileInfo(filepath);
+                            fi = new FileInfo(filepath);
                             switch (fi.Extension.ToUpper())
                             {
                                 case ".DOC":
-                                    { filepath= TransformNewOfficeDocument.DOCToDOCX(fi.FullName); }
+                                    { filepath = TransformNewOfficeDocument.DOCToDOCX(fi.FullName); }
                                     break;
                                 case ".XLS":
-                                    {  filepath=TransformNewOfficeDocument.XLSToXLSX(fi.FullName);}
+                                    { filepath = TransformNewOfficeDocument.XLSToXLSX(fi.FullName); }
                                     break;
                                 case ".PPT":
-                                    { filepath= TransformNewOfficeDocument.PPTToPPTX(fi.FullName);}
-                                    break;
-                            }
-                            Console.WriteLine("-----------------output------------------------");
-                            Console.WriteLine(filepath);
-
-                            Console.WriteLine("Press Enter key to return main menu...");
-                            Console.ReadLine();
-                        }break;
-                    case "8":
-                        {
-                            Console.Write("\nEnter file path of doc,xls or ppt: ");
-                            filepath = Console.ReadLine();
-                              fi = new FileInfo(filepath);
-                            switch (fi.Extension.ToUpper())
-                            {
-                                case ".DOC":
-                                    { filepath= TransformNewOfficeDocument_OpenSource.DOCToDOCX(fi.FullName); }
-                                    break;
-                                case ".XLS":
-                                    {  filepath=TransformNewOfficeDocument.XLSToXLSX(fi.FullName);}
-                                    break;
-                                case ".PPT":
-                                    { filepath= TransformNewOfficeDocument.PPTToPPTX(fi.FullName);}
+                                    { filepath = TransformNewOfficeDocument.PPTToPPTX(fi.FullName); }
                                     break;
                             }
                             Console.WriteLine("-----------------output------------------------");
@@ -275,10 +257,68 @@ namespace FileMetaData
                             Console.ReadLine();
                         }
                         break;
+                    case "8":
+                        {
+                            Console.Write("\nEnter file path of doc,xls or ppt: ");
+                            filepath = Console.ReadLine();
+                            fi = new FileInfo(filepath);
+                            switch (fi.Extension.ToUpper())
+                            {
+                                case ".DOC":
+                                    { filepath = TransformNewOfficeDocument_OpenSource.DOCToDOCX(fi.FullName); }
+                                    break;
+                                case ".XLS":
+                                    { filepath = TransformNewOfficeDocument.XLSToXLSX(fi.FullName); }
+                                    break;
+                                case ".PPT":
+                                    { filepath = TransformNewOfficeDocument.PPTToPPTX(fi.FullName); }
+                                    break;
+                            }
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(filepath);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "9":
+                        {
+                            Console.Write("\n call  DocumentSecurity.WebService/token API : ");
+                            string userName = "surendra.test@test.com";
+                            string password = "aB-123456";
+                            string apiBaseUri = "http://localhost";
+                            string webAPIUrl = "DocumentSecurity.WebService/token";
+                            string token = GetAPIToken(userName, password, apiBaseUri, webAPIUrl).Result;
+                            GlobalAPITken = token;
+
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine("Token: {0}", token);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "10":
+                        {
+                            Console.Write("\n DocumentSecurity.WebService/api/Account/CurrentUser: ");
+                            string apiBaseUri = "http://localhost";
+                            string webAPIUrl = "DocumentSecurity.WebService/api/Account/CurrentUser";
+                            Console.Write("\n Enter Token: ");
+                          string  token = Console.ReadLine();
+                            if(string.IsNullOrEmpty(token))
+                              token=GlobalAPITken;
+                            string result = GetCurrentUserDetail(apiBaseUri, webAPIUrl,token).Result;
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(result);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
                     case "0":
                         Console.Write("\nAre you sure you want to exit.(y/n)?");
-                        input = Console.ReadKey();
-                        loop = input.KeyChar.ToString();
+                        input = Console.ReadLine();
+                        loop = input;
                         break;
                     default:
                         return;
@@ -286,6 +326,72 @@ namespace FileMetaData
                 }
             } while (loop != "y");
             //
+        }
+        private static async Task<string> GetAPIToken(string userName, string password, string apiBaseUri, string webAPIUrl)
+        {
+            string token = string.Empty;
+            using (var client = new HttpClient())
+            {
+                //setup client
+                client.BaseAddress = new Uri(apiBaseUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
+
+                //setup login data
+                var formContent = new FormUrlEncodedContent(new[]
+                 {
+                      new KeyValuePair<string, string>("grant_type", "password"),
+                      new KeyValuePair<string, string>("UserName", userName),
+                      new KeyValuePair<string, string>("Password", password),
+                      });
+                //send request
+
+                HttpResponseMessage responseMessage = await client.PostAsync(webAPIUrl, formContent);
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    //get access token from response body
+                    var responseJson = await responseMessage.Content.ReadAsStringAsync();
+                    var jObject = JObject.Parse(responseJson);
+                    token = jObject.GetValue("access_token").ToString();
+                }
+            }
+
+            return token;
+        }
+        private static async Task<string> GetCurrentUserDetail(string apiBaseUri, string webAPIUrl, string token)
+        {
+            string result = string.Empty;
+            using (var client = new HttpClient())
+            {
+
+                //setup client
+               // client.BaseAddress = new Uri(apiBaseUri);
+               // client.DefaultRequestHeaders.Accept.Clear();
+               // client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+               // client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                //setup login data
+                var formContent = new FormUrlEncodedContent(new[]
+                      {
+                      new KeyValuePair<string, string>("?", "?"), 
+                      });
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, apiBaseUri +"/"+ webAPIUrl);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer",  token);
+             
+               // request.Content=   new StringContent(null, Encoding.UTF8, "application/json");
+               //send request
+               HttpResponseMessage responseMessage = client.SendAsync(request).Result; 
+                
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    //get access token from response body
+                    result = await responseMessage.Content.ReadAsStringAsync();
+                     
+                }
+            }
+
+            return result;
         }
         private static string Webapicall_ApplyMetaData(string baseAddressUrl, string requestUri, MetadataParamBatch param)
         {

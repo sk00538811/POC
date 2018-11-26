@@ -89,7 +89,7 @@ namespace DocumentSecurity.WebService.Controllers
                 LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
             };
         }
-        // GET api/Account/UserInfo
+        // GET api/Account/CurrentUser
         //[HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
         [Authorize]
         [Route("CurrentUser")]

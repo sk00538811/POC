@@ -61,6 +61,18 @@ namespace DocumentSecurity.WebService
                                             SELECT ur.[UserId]  ,ur.[RoleId],   [RoleName]= r.[Name]
                                               FROM [dbo].[AspNetUserRoles] ur inner join [dbo].[AspNetRoles] r
                                                      on ur.[RoleId]=r.[Id]  ";
+            /// <summary>
+            /// Description: its return two true/false
+            /// and take only one parameter @Id,@Email,@PasswordHash ,@UserName 
+            /// </summary>
+            public static string QCreateUser = @"insert into [dbo].[AspNetUsers] ( [Id] ,[Email]  ,[EmailConfirmed] ,[PasswordHash] ,[SecurityStamp]
+                                            ,[PhoneNumber] ,[PhoneNumberConfirmed] ,[TwoFactorEnabled] ,[LockoutEndDateUtc] 
+                                            ,[LockoutEnabled] ,[AccessFailedCount] ,[UserName] ,[IsDeleted])
+                                             values 
+                                             ( @Id  ,@Email   ,0 ,@PasswordHash  ,null
+                                            ,null ,0 ,0 ,null 
+                                            ,0 ,0 ,@UserName  ,0)";
+
         }
 
         public enum GlobalRoles {
