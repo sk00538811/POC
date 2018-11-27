@@ -176,7 +176,7 @@ namespace FileMetaData
                         {    //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/Answers_workbook.pdf";
                             // "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
                             //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/221dc991-ae8c-4a10-8108-1c95a0723fdf.zip";
-                            string sourceFileUrl = Console.ReadLine();// "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
+                            string sourceFileUrl = /*Console.ReadLine();//*/ "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
                             string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
                             string api_requestUri = "Metadata/Apply";
                             MetadataParamBatch oMetadataParamBatch = new MetadataParamBatch();

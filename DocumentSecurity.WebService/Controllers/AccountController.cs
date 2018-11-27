@@ -17,10 +17,14 @@ using DocumentSecurity.WebService.Models;
 using DocumentSecurity.WebService.Providers;
 using DocumentSecurity.WebService.Results;
 using System.Linq;
-
+using MyUserManager = DocumentSecurity.WebService.DataAccess.AccountDataAccess;
+using MyUser = DocumentSecurity.WebService.Models.UserModal;
+using MyUserRoles = DocumentSecurity.WebService.Models.UserRoleModal;
+using MyRole = DocumentSecurity.WebService.Models.RoleModal;
+using MyEncryption = DocumentSecurity.WebService.Providers.EncryptionProvider;
 namespace DocumentSecurity.WebService.Controllers
 {
-   // [Authorize(Roles = "Admin")] 
+    // [Authorize(Roles = "Admin")] 
     [RoutePrefix("api/Account")]
     public class AccountController : ApiController
     {
@@ -90,8 +94,8 @@ namespace DocumentSecurity.WebService.Controllers
             };
         }
         // GET api/Account/CurrentUser
-        //[HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
-        [Authorize]
+        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        [Authorize(Roles = "Admin")]
         [Route("CurrentUser")]
         public UserDetailInfoViewModel GetCurrentUserDetail()
         {
@@ -99,11 +103,299 @@ namespace DocumentSecurity.WebService.Controllers
 
             return new UserDetailInfoViewModel
             {
-                 RoleNames = currentLogin!=null?currentLogin.RoleNames:null,
-               Email = currentLogin!=null?currentLogin.Email:null,
-                UserName = currentLogin!=null?currentLogin.UserName :null
+                RoleNames = currentLogin != null ? currentLogin.RoleNames : null,
+                Email = currentLogin != null ? currentLogin.Email : null,
+                Id = currentLogin != null ? currentLogin.Id : null,
+                UserName = currentLogin != null ? currentLogin.UserName : null
             };
         }
+        // GET api/Account/GetAllRoles
+        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        [Route("GetAllRoles")]
+        public RolesInfoViewModel GetAllRoles()
+        {
+            RolesInfoViewModel ol = new RolesInfoViewModel();
+            try
+            {
+                ol.Roles = new MyUserManager().GetAllRoles(); //await UserManager.CreateAsync(user, model.Password);
+
+            }
+            catch (Exception ex) { ModelState.AddModelError("Unable to fetch roles.", ex.Message); }
+            if (ol.Roles.Count <= 0)
+            {
+                ModelState.AddModelError("", "No role exists.");
+            }
+
+            return ol;
+
+
+        }
+        // POST api/Account/Register
+        [AllowAnonymous]
+        [Route("Register")]
+        public async Task<IHttpActionResult> Register(RegisterBindingModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
+            //set the IsDeleted property to false
+            user.IsDeleted = false;
+            UserModal ouser = new UserModal();
+            ouser.Id = user.Id;
+            ouser.Email = user.Email;
+            ouser.UserName = user.UserName;
+            ouser.PasswordHash = MyEncryption.Encrypt(model.Password);
+            bool flag = false;
+            try
+            {
+                flag = new MyUserManager().CreateUser(ouser); //await UserManager.CreateAsync(user, model.Password);
+            }
+            catch (Exception ex) { ModelState.AddModelError("", ex.Message); }
+            if (!flag)
+            {
+                ModelState.AddModelError("", "Failed to create user");
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+        // POST api/Account/users/{id:guid}/roles 
+        [AllowAnonymous]
+        [Route("users/{id:guid}/roles")]
+        [HttpPut]
+        public async Task<IHttpActionResult> AssignRolesToUser(string id, string[] rolesToAssign)
+        {
+            if (rolesToAssign == null)
+            {
+                return this.BadRequest("No roles specified");
+            }
+
+            ///find the user we want to assign roles to
+            MyUser appUser = new MyUserManager().GetUserDetailById(id); //await this.UserManager.FindByIdAsync(id);
+
+            if (appUser == null || (appUser.IsDeleted ?? false))
+            {
+                return NotFound();
+            }
+
+            ///check if the user currently has any roles
+            List<MyUserRoles> currentRoles = appUser.Roles;// await this.UserManager.GetRolesAsync(appUser.Id);
+            List<MyRole> allRoles = new MyUserManager().GetAllRoles();// await this.UserManager.GetRolesAsync(appUser.Id);
+            if (allRoles == null || allRoles.Count == 0)
+                return NotFound();
+
+
+            List<MyRole> tempRoles = allRoles.Where(n => !currentRoles.Any(x => x.RoleName.Contains(n.RoleName))).Select(x => new MyRole { RoleId = x.RoleId, RoleName = x.RoleName }).ToList();
+
+            List<MyRole> FinalrolesToAssign = tempRoles.Where(n => rolesToAssign.Contains(n.RoleName)).Select(x => new MyRole { RoleId = x.RoleId, RoleName = x.RoleName }).ToList();
+
+            if (FinalrolesToAssign.Count() == 0)
+            {
+                ModelState.AddModelError("", string.Format("Roles '{0}' does not exist in the system", string.Join(",", FinalrolesToAssign)));
+                return this.BadRequest(ModelState);
+            }
+
+            ///remove user from current roles, if any
+            // bool flag = new MyUserManager().RemoveUserRoles (appUser.Id, currentRole  );
+            string strRoles = string.Empty;
+            foreach (MyRole r in FinalrolesToAssign)
+            {
+                try
+                {  ///assign user to the new roles
+                    if (!new MyUserManager().AddUserRoles(appUser.Id, r.RoleId))
+                        strRoles += r.RoleName + ", ";
+                }
+                catch
+                {
+                    strRoles += r.RoleName + ", ";
+                }
+
+            }
+            if (!string.IsNullOrEmpty(strRoles))
+            {
+                ModelState.AddModelError("", "Failed to add " + strRoles + " user roles");
+                return BadRequest(ModelState);
+            }
+
+            return Ok(new { userId = id, rolesAssigned = FinalrolesToAssign.Select(x => x.RoleName).ToArray() });
+        }
+        // POST api/Account/users/{id:guid}/roles 
+        [AllowAnonymous]
+        [Route("users/{id:guid}/removeroles")]
+        [HttpPut]
+        public async Task<IHttpActionResult> RemoveRolesFromUser(string id, string[] rolesToRemove)
+        {
+            if (rolesToRemove == null)
+            {
+                return this.BadRequest("No roles specified");
+            }
+
+            ///find the user we want to assign roles to
+            MyUser appUser = new MyUserManager().GetUserDetailById(id); //await this.UserManager.FindByIdAsync(id);
+
+            if (appUser == null || (appUser.IsDeleted ?? false))
+            {
+                return NotFound();
+            }
+
+            ///check if the user currently has any roles
+            List<MyUserRoles> currentRoles = appUser.Roles;// await this.UserManager.GetRolesAsync(appUser.Id);
+            List<MyRole> allRoles = new MyUserManager().GetAllRoles();// await this.UserManager.GetRolesAsync(appUser.Id);
+            if (allRoles == null || allRoles.Count == 0)
+                return NotFound();
+
+
+            List<MyRole> tempRoles = allRoles.Where(n => currentRoles.Any(x => x.RoleName.Contains(n.RoleName))).Select(x => new MyRole { RoleId = x.RoleId, RoleName = x.RoleName }).ToList();
+
+            List<MyRole> FinalrolesToRemove = tempRoles.Where(n => rolesToRemove.Contains(n.RoleName)).Select(x => new MyRole { RoleId = x.RoleId, RoleName = x.RoleName }).ToList();
+
+            if (FinalrolesToRemove.Count() == 0)
+            {
+                ModelState.AddModelError("", string.Format("Roles '{0}' does not exist in the system", string.Join(",", FinalrolesToRemove)));
+                return this.BadRequest(ModelState);
+            }
+
+            ///remove user from current roles, if any
+            // bool flag = new MyUserManager().RemoveUserRoles (appUser.Id, currentRole  );
+            string strRoles = string.Empty;
+            foreach (MyRole r in FinalrolesToRemove)
+            {
+                try
+                {  ///remove role from user  
+                    if (!new MyUserManager().RemoveUserRoles(appUser.Id, r.RoleId))
+                        strRoles += r.RoleName + ", ";
+                }
+                catch
+                {
+                    strRoles += r.RoleName + ", ";
+                }
+
+            }
+            if (!string.IsNullOrEmpty(strRoles))
+            {
+                ModelState.AddModelError("", "Failed to remove " + strRoles + " user roles");
+                return BadRequest(ModelState);
+            }
+
+            return Ok(new { userId = id, rolesRemoved = FinalrolesToRemove.Select(x => x.RoleName).ToArray() });
+        }
+
+        // DELETE api/Account/DeleteUser/{id:guid}  
+        // [AllowAnonymous]
+        [OverrideAuthorization]
+        [Authorize(Roles = "Admin")]
+        [HttpDelete]
+        [Route("DeleteUser/{id:guid}")]
+        public IHttpActionResult DeleteUser(string id)
+        {
+            //check if such a user exists in the database
+            var userToDelete = new MyUserManager().GetUserDetailById(id); //this.UserManager.FindById(id);
+            if (userToDelete == null)
+            {
+                return this.NotFound();
+            }
+            else if (userToDelete.IsDeleted ?? false)
+            {
+                return this.BadRequest("User already deleted");
+            }
+            else
+            {
+                try
+                {
+                    if (!new MyUserManager().DeleteUser(userToDelete))
+                    {
+                        return this.BadRequest("Unable to  delete user. Please contact administrator");
+                    }
+                }
+                catch (Exception ex) { return this.BadRequest(ex.Message); }
+
+            }
+            return this.Ok();
+        }
+
+
+        // POST api/Account/ChangePassword
+        [Route("ChangePassword")]
+        public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            CurrentLoginData currentLogin = CurrentLoginData.FromIdentity(User.Identity as ClaimsIdentity);
+            if (currentLogin == null)
+                return NotFound();
+
+            if (model.NewPassword != model.ConfirmPassword || model.OldPassword == model.NewPassword)
+            {
+                ModelState.AddModelError("", "New and confirm password should be same and it should not matched with old passwrod");
+                return BadRequest(ModelState);
+            }
+            else
+            {
+                MyUser ouser = new MyUser();
+                ouser.Id = currentLogin.Id;
+                ouser.Email = currentLogin.Email;
+                ouser.PasswordHash = MyEncryption.Encrypt(model.NewPassword);
+
+                bool flag = false;
+                try
+                {
+                    flag = new MyUserManager().ChangeUserPassword(ouser); //await UserManager.CreateAsync(user, model.Password);
+                }
+                catch (Exception ex) { ModelState.AddModelError("", ex.Message); }
+                if (!flag)
+                {
+                    ModelState.AddModelError("", "Failed to change user password");
+                    return BadRequest(ModelState);
+                }
+            }
+            return Ok();
+        }
+
+        // POST api/Account/SetPassword
+        [Route("SetPassword")]
+        public async Task<IHttpActionResult> SetPassword(SetPasswordBindingModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            CurrentLoginData currentLogin = CurrentLoginData.FromIdentity(User.Identity as ClaimsIdentity);
+            if (currentLogin == null)
+                return NotFound();
+
+            if (model.NewPassword != model.ConfirmPassword  )
+            {
+                ModelState.AddModelError("", "New and confirm password should be same.");
+                return BadRequest(ModelState);
+            }
+            else
+            {
+                MyUser ouser = new MyUser();
+                ouser.Id = currentLogin.Id;
+                ouser.Email = currentLogin.Email;
+                ouser.PasswordHash = MyEncryption.Encrypt(model.NewPassword);
+
+                bool flag = false;
+                try
+                {
+                    flag = new MyUserManager().ChangeUserPassword(ouser); //await UserManager.CreateAsync(user, model.Password);
+                }
+                catch (Exception ex) { ModelState.AddModelError("", ex.Message); }
+                if (!flag)
+                {
+                    ModelState.AddModelError("", "Failed to set user password");
+                    return BadRequest(ModelState);
+                }
+            }
+            return Ok();
+        }
+
         // POST api/Account/Logout
         [Route("Logout")]
         public IHttpActionResult Logout()
@@ -111,8 +403,8 @@ namespace DocumentSecurity.WebService.Controllers
             Authentication.SignOut(CookieAuthenticationDefaults.AuthenticationType);
             return Ok();
         }
-
-        // GET api/Account/ManageInfo?returnUrl=%2F&generateState=true
+        #region extra service not in use
+       /* // GET api/Account/ManageInfo?returnUrl=%2F&generateState=true
         [Route("ManageInfo")]
         public async Task<ManageInfoViewModel> GetManageInfo(string returnUrl, bool generateState = false)
         {
@@ -150,45 +442,6 @@ namespace DocumentSecurity.WebService.Controllers
                 Logins = logins,
                 ExternalLoginProviders = GetExternalLogins(returnUrl, generateState)
             };
-        }
-
-        // POST api/Account/ChangePassword
-        [Route("ChangePassword")]
-        public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
-                model.NewPassword);
-
-            if (!result.Succeeded)
-            {
-                return GetErrorResult(result);
-            }
-
-            return Ok();
-        }
-
-        // POST api/Account/SetPassword
-        [Route("SetPassword")]
-        public async Task<IHttpActionResult> SetPassword(SetPasswordBindingModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            IdentityResult result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
-
-            if (!result.Succeeded)
-            {
-                return GetErrorResult(result);
-            }
-
-            return Ok();
         }
 
         // POST api/Account/AddExternalLogin
@@ -356,29 +609,6 @@ namespace DocumentSecurity.WebService.Controllers
             return logins;
         }
 
-        // POST api/Account/Register
-        [AllowAnonymous]
-        [Route("Register")]
-        public async Task<IHttpActionResult> Register(RegisterBindingModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
-            //set the IsDeleted property to false
-            user.IsDeleted = false;
-            IdentityResult result = await UserManager.CreateAsync(user, model.Password);
-
-            if (!result.Succeeded)
-            {
-                return GetErrorResult(result);
-            }
-
-            return Ok();
-        }
-
         // POST api/Account/RegisterExternal
         [OverrideAuthentication]
         [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
@@ -411,95 +641,8 @@ namespace DocumentSecurity.WebService.Controllers
             }
             return Ok();
         }
-        [AllowAnonymous]
-        [Route("users/{id:guid}/roles")]
-        [HttpPut]
-        public async Task<IHttpActionResult> AssignRolesToUser(string id, string[] rolesToAssign)
-        {
-            if (rolesToAssign == null)
-            {
-                return this.BadRequest("No roles specified");
-            }
-
-            ///find the user we want to assign roles to
-            var appUser = await this.UserManager.FindByIdAsync(id);
-
-            if (appUser == null || appUser.IsDeleted)
-            {
-                return NotFound();
-            }
-
-            ///check if the user currently has any roles
-            var currentRoles = await this.UserManager.GetRolesAsync(appUser.Id);
-
-
-            var rolesNotExist = rolesToAssign.Except(this.RoleManager.Roles.Select(x => x.Name)).ToArray();
-
-            if (rolesNotExist.Count() > 0)
-            {
-                ModelState.AddModelError("", string.Format("Roles '{0}' does not exist in the system", string.Join(",", rolesNotExist)));
-                return this.BadRequest(ModelState);
-            }
-
-            ///remove user from current roles, if any
-            IdentityResult removeResult = await this.UserManager.RemoveFromRolesAsync(appUser.Id, currentRoles.ToArray());
-
-
-            if (!removeResult.Succeeded)
-            {
-                ModelState.AddModelError("", "Failed to remove user roles");
-                return BadRequest(ModelState);
-            }
-
-            ///assign user to the new roles
-            IdentityResult addResult = await this.UserManager.AddToRolesAsync(appUser.Id, rolesToAssign);
-
-            if (!addResult.Succeeded)
-            {
-                ModelState.AddModelError("", "Failed to add user roles");
-                return BadRequest(ModelState);
-            }
-
-            return Ok(new { userId = id, rolesAssigned = rolesToAssign });
-        }
-        // [AllowAnonymous]
-        [OverrideAuthorization]
-        [Authorize(Roles = "Admin,Client")]
-        [HttpDelete]
-        [Route("user/{id:guid}")]
-        public IHttpActionResult DeleteUser(string id)
-        {
-            //check if such a user exists in the database
-            var userToDelete = this.UserManager.FindById(id);
-            if (userToDelete == null)
-            {
-                return this.NotFound();
-            }
-            else if (userToDelete.IsDeleted)
-            {
-                return this.BadRequest("User already deleted");
-            }
-            else
-            {
-                var con = System.Configuration.ConfigurationManager.ConnectionStrings["SystemUsers"].ConnectionString;
-                using (System.Data.SqlClient.SqlConnection connection = new System.Data.SqlClient.SqlConnection(con))
-                {
-                    using (System.Data.SqlClient.SqlCommand command = new System.Data.SqlClient.SqlCommand("dbo.DeleteUser", connection))
-                    {
-                        try
-                        {
-                            command.CommandType = System.Data.CommandType.StoredProcedure;
-                            command.Parameters.Add("@UserId", System.Data.SqlDbType.NVarChar).Value = id;
-                            connection.Open();
-                            command.ExecuteNonQuery(); 
-                        }
-                        finally { connection.Close(); }
-
-                    }
-                }
-            }
-            return this.Ok();
-        }
+*/
+        #endregion
         protected override void Dispose(bool disposing)
         {
             if (disposing && _userManager != null)
@@ -594,8 +737,10 @@ namespace DocumentSecurity.WebService.Controllers
                 };
             }
         }
-        private class CurrentLoginData {
+        private class CurrentLoginData
+        {
             public CurrentLoginData() { RoleNames = new List<string>(); }
+            public string Id { get; set; }
             public string UserName { get; set; }
             public string Email { get; set; }
             public List<string> RoleNames { get; set; }
@@ -607,14 +752,17 @@ namespace DocumentSecurity.WebService.Controllers
                     return null;
                 }
 
-                List<string> roles = identity.Claims.Select(x=>x.Value).ToList(); 
-                
+                List<string> roles = identity.Claims.Where(x => x.Type == ClaimTypes.Role).Select(x => x.Value).ToList();
 
+                string username = identity.Claims.Where(x => x.Type == ClaimTypes.Name).Select(x => x.Value).SingleOrDefault();
+                string email = identity.Claims.Where(x => x.Type == ClaimTypes.Email).Select(x => x.Value).SingleOrDefault();
+                string id = identity.Claims.Where(x => x.Type == ClaimTypes.Sid).Select(x => x.Value).SingleOrDefault();
                 return new CurrentLoginData
                 {
                     RoleNames = roles,
-                    Email = "",
-                    UserName = identity.GetUserName()
+                    Email = email,
+                    Id = id,
+                    UserName = username
                 };
             }
         }

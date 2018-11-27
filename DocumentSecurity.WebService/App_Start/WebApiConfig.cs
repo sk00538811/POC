@@ -16,11 +16,11 @@ namespace DocumentSecurity.WebService
 
             EnableCorsAttribute cors = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors(cors);
-             
-            // Configure Web API to use only bearer token authentication.
-           // config.SuppressDefaultHostAuthentication();
-           // config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
 
+            // Configure Web API to use only bearer token authentication.
+            //config.SuppressDefaultHostAuthentication();
+            // config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
+           // config.Filters.Add(new AuthorizeAttribute());
             // Web API routes
             config.MapHttpAttributeRoutes();
 
@@ -31,6 +31,9 @@ namespace DocumentSecurity.WebService
             );
             var jsonFormatter = config.Formatters.OfType<System.Net.Http.Formatting.JsonMediaTypeFormatter>().First();
             jsonFormatter.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            // Adding JSON type web api formatting.  
+            config.Formatters.Clear();
+            config.Formatters.Add(jsonFormatter);
         }
     }
 }

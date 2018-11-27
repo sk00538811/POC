@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MyRole = DocumentSecurity.WebService.Models.RoleModal;
 
 namespace DocumentSecurity.WebService.Models
 {
@@ -34,12 +35,18 @@ namespace DocumentSecurity.WebService.Models
         public string LoginProvider { get; set; }
     }
     public class UserDetailInfoViewModel
-    { public UserDetailInfoViewModel(){ RoleNames = new List<string>();  }
+    {
+        public UserDetailInfoViewModel() { RoleNames = new List<string>(); }
         public string Email { get; set; }
 
         public List<string> RoleNames { get; set; }
 
+        public string Id { get; set; }
         public string UserName { get; set; }
+    }
+    public class RolesInfoViewModel
+    {    public RolesInfoViewModel() { Roles = new List<MyRole>(); }
+      public List<MyRole> Roles { set; get; }
     }
     public class UserLoginInfoViewModel
     {

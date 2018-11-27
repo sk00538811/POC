@@ -28,17 +28,19 @@ namespace DocumentSecurity.WebService.Providers
             context.OwinContext.Response.Headers.Add("Access-Control-Allow-Origin", new[] { "*" });
 
             MyUser user = new MyAccountDataAccess().GetUserDetailByUserName(context.UserName);
-
-            if (user != null)
+           if (user != null)
             {
 
                 if (user.UserName == context.UserName && user.PasswordHash == MyEncryption.Encrypt(context.Password))
                 { 
                     foreach (var r in user.Roles)
                     {
-                        identity.AddClaim(new Claim("Role",r.RoleName));
+                        identity.AddClaim(new Claim(ClaimTypes.Role  ,r.RoleName));
                     }
-
+                        identity.AddClaim(new Claim(ClaimTypes.Sid, user.Id));
+                        identity.AddClaim(new Claim(ClaimTypes.Name, context.UserName));
+                        identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
+                   
                     var props = new AuthenticationProperties(new Dictionary<string, string>
                             {
                                 {

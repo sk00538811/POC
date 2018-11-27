@@ -7,7 +7,7 @@ namespace DocumentSecurity.WebService.Models
 {
     public class UserModal
     {
-        public UserModal() { Roles = new List<RoleModal>(); }
+        public UserModal() { Roles = new List<UserRoleModal>(); }
         public static class DBObject
         {
 
@@ -48,8 +48,29 @@ namespace DocumentSecurity.WebService.Models
         public string UserName { get; set; }
         public bool? IsDeleted { get; set; }
 
-        public List<RoleModal> Roles { get; set; }
+        public List<UserRoleModal> Roles { get; set; }
 
+        #endregion
+    }
+    public class UserRoleModal
+    {
+        public static class DBObject
+        {
+        }
+        public static class DataTables
+        {
+            public static string dtUserRoles = "dtUserRoles";
+        }
+        public class Fields
+        {
+            public static string UserId = "UserId";
+            public static string RoleId = "RoleId";
+            public static string RoleName = "RoleName";
+        }
+        #region property
+        public string UserId { get; set; }
+        public string RoleId { get; set; }
+        public string RoleName { get; set; }
         #endregion
     }
     public class RoleModal
@@ -63,13 +84,11 @@ namespace DocumentSecurity.WebService.Models
         }
         public class Fields
         {
-            public static string UserId = "UserId";
-            public static string RoleId = "RoleId";
+             public static string RoleId = "RoleId";
             public static string RoleName = "RoleName";
         }
         #region property
-        public string UserId { get; set; }
-        public string RoleId { get; set; }
+         public string RoleId { get; set; }
         public string RoleName { get; set; }
         #endregion
     }
