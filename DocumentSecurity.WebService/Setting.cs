@@ -105,8 +105,9 @@ namespace DocumentSecurity.WebService
 
         public enum GlobalRoles
         {
-            Admin = 1,
-            Client = 2
+            SuperAdmin = 1,
+            Admin = 2,
+            Client = 3
         }
     }
 }
