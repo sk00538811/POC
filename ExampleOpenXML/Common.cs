@@ -1,0 +1,327 @@
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+namespace ExampleOpenXML
+{
+    public static class Extensions
+        {
+            // this extension is for populating the GridView with values from a spreadsheet. 
+            public static DataSet GetDataTableFromSpreadSheet(this SpreadsheetDocument document, int columns = -1, bool excludeHeader = true)
+            {
+                DataSet ds = new DataSet("Data");
+
+                try
+                {
+                    DataTable dt = null;
+                    var sheets = document.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>();
+                    foreach (Sheet st in sheets)
+                    {
+                        try
+                        {
+                            var id = st.Id.Value;
+                            dt = new DataTable(st.Name);
+                            var part = (WorksheetPart)document.WorkbookPart.GetPartById(id);
+                            var sheet = part.Worksheet;
+                            var data = sheet.GetFirstChild<SheetData>();
+                            var rows = data.Descendants<Row>();
+                            if (rows.Count() != 0)
+                            {
+                                var colCount = rows.First().Cast<Cell>().Count();
+                                if (columns > colCount || columns <= 0)
+                                    columns = colCount;
+
+                                foreach (var cell in rows.First().Cast<Cell>().Take(columns))
+                                    dt.Columns.Add(cell.GetValue(document));
+
+                                foreach (var row in rows.Skip(Convert.ToInt32(excludeHeader)))
+                                    dt.Rows.Add((from cell in row.Cast<Cell>().Take(columns) select cell.GetValue(document)).ToArray());
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            dt = new DataTable();
+                        }
+                        if (dt != null)
+                        {
+                            ds.Tables.Add(dt);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // result = new DataTable();
+                }
+
+                return ds;
+            }
+
+            public static string GetValue(this Cell cell, SpreadsheetDocument document)
+            {
+                string result = string.Empty;
+                try
+                {
+                    if (cell != null && cell.ChildElements.Count != 0)
+                    {
+                        var part = document.WorkbookPart.SharedStringTablePart;
+                        if (cell.DataType != null && cell.DataType == CellValues.SharedString)
+                            result = part.SharedStringTable.ChildElements[Int32.Parse(cell.CellValue.InnerText)].InnerText;
+                        else
+                            result = cell.CellValue.InnerText;
+                    }
+                }
+                catch (Exception)
+                {
+                    result = string.Empty;
+                }
+                return result;
+            }
+        }
+
+    public class Common
+    {
+
+        public static DataSet OleDBParse(string fileName)
+        {
+            string connectionString = string.Format("Provider=Microsoft.ACE.OLEDB.12.0; data source={0};Extended Properties=\"Excel 12.0;HDR=YES;IMEX=1\" ", fileName);
+
+
+            DataSet data = new DataSet("Data");
+
+            foreach (var sheetName in GetExcelSheetNames(connectionString))
+            {
+                using (OleDbConnection con = new OleDbConnection(connectionString))
+                {
+                    var dataTable = new DataTable();
+                    string query = string.Format("SELECT * FROM [{0}]", sheetName);
+                    con.Open();
+                    OleDbDataAdapter adapter = new OleDbDataAdapter(query, con);
+                    adapter.Fill(dataTable);
+                    data.Tables.Add(dataTable);
+                }
+            }
+
+            return data;
+        }
+        public static string[] GetExcelSheetNames(string connectionString)
+        {
+            OleDbConnection con = null;
+            DataTable dt = null;
+            con = new OleDbConnection(connectionString);
+            con.Open();
+            dt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+
+            if (dt == null)
+            {
+                return null;
+            }
+
+            String[] excelSheetNames = new String[dt.Rows.Count];
+            int i = 0;
+
+            foreach (DataRow row in dt.Rows)
+            {
+                excelSheetNames[i] = row["TABLE_NAME"].ToString();
+                i++;
+            }
+
+            return excelSheetNames;
+        }
+        public void example()
+        {
+
+
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            var fileName = Path.Combine(path, @"test.xlsx");
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+
+
+            var headerList = new string[] { "Header 1", "Header 2", "Header 3", "Header 4" };
+            //sheet1 
+            var boolList = new bool[] { true, false, true, false };
+            var intList = new int[] { 1, 2, 3, -4 };
+            var dateList = new DateTime[] { DateTime.Now, DateTime.Today, DateTime.Parse("1/1/2014"), DateTime.Parse("2/2/2014") };
+            var sharedStringList = new string[] { "shared string", "shared string", "cell 3", "cell 4" };
+            var inlineStringList = new string[] { "inline string", "inline string", "3>", "<4" };
+
+
+
+            var stopWatch = new Stopwatch();
+
+
+            using (var spreadSheet = SpreadsheetDocument.Create(fileName, SpreadsheetDocumentType.Workbook))
+            {
+                // create the workbook
+                var workbookPart = spreadSheet.AddWorkbookPart();
+
+                var openXmlExportHelper = new OpenXmlWriterHelper();
+                openXmlExportHelper.SaveCustomStylesheet(workbookPart);
+
+
+                var workbook = workbookPart.Workbook = new Workbook();
+                var sheets = workbook.AppendChild<Sheets>(new Sheets());
+
+
+
+                // create worksheet 1
+                var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                var sheet = new Sheet() { Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
+                sheets.Append(sheet);
+
+                using (var writer = OpenXmlWriter.Create(worksheetPart))
+                {
+
+                    writer.WriteStartElement(new Worksheet());
+                    writer.WriteStartElement(new SheetData());
+
+                    //Create header row
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < headerList.Length; i++)
+                    {
+                        //header formatting attribute.  This will create a <c> element with s=2 as its attribute
+                        //s stands for styleindex
+                        var attributes = new OpenXmlAttribute[] { new OpenXmlAttribute("s", null, "2") }.ToList();
+                        openXmlExportHelper.WriteCellValueSax(writer, headerList[i], CellValues.SharedString, attributes);
+
+                    }
+                    writer.WriteEndElement(); //end of Row tag
+
+
+
+
+                    // bool List 
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < boolList.Length; i++)
+                    {
+                        openXmlExportHelper.WriteCellValueSax(writer, boolList[i].ToString(), CellValues.Boolean);
+                    }
+
+                    writer.WriteEndElement(); //end of Row
+
+                    //int List 
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < intList.Length; i++)
+                    {
+                        openXmlExportHelper.WriteCellValueSax(writer, intList[i].ToString(), CellValues.Number);
+                    }
+                    writer.WriteEndElement(); // end of Row
+
+                    // datetime List
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < dateList.Length; i++)
+                    {
+                        //date format.  Excel internally represent the datetime value as number, the date is only a formatting
+                        //applied to the number.  It will look something like 40000.2833 without formatting
+                        var attributes = new OpenXmlAttribute[] { new OpenXmlAttribute("s", null, "1") }.ToList();
+                        //the helper internally translate the CellValues.Date into CellValues.Number before writing
+                        openXmlExportHelper.WriteCellValueSax(writer, (dateList[i]).ToOADate().ToString(CultureInfo.InvariantCulture), CellValues.Date, attributes);
+
+                    }
+                    writer.WriteEndElement(); //end of Row
+
+                    // shared string List
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < sharedStringList.Length; i++)
+                    {
+                        openXmlExportHelper.WriteCellValueSax(writer, sharedStringList[i], CellValues.SharedString);
+                    }
+                    writer.WriteEndElement(); //end of Row
+
+                    // inline string List
+                    writer.WriteStartElement(new Row());
+                    for (int i = 0; i < inlineStringList.Length; i++)
+                    {
+                        openXmlExportHelper.WriteCellValueSax(writer, inlineStringList[i], CellValues.InlineString);
+                    }
+                    writer.WriteEndElement(); //end of Row
+
+
+
+
+                    writer.WriteEndElement(); //end of SheetData
+                    writer.WriteEndElement(); //end of worksheet
+                    writer.Close();
+                } 
+
+                //sheet2
+                Console.WriteLine("Starting to generate 1 million random string");
+
+                //1 million rows
+                var a = new string[1000000, 4];
+                var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                var random = new Random();
+                for (int i = 0; i < 1000000; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        a[i, j] = new string(
+                             Enumerable.Repeat(chars, 5)
+                                        .Select(s => s[random.Next(s.Length)])
+                                        .ToArray());
+                    }
+                }
+
+                Console.WriteLine("Starting to generate 1 million excel rows...");
+
+                stopWatch.Start();
+
+                // create worksheet 2
+                worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                sheet = new Sheet() { Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = 2, Name = "Sheet2" };
+                sheets.Append(sheet);
+
+                using (var writer = OpenXmlWriter.Create(worksheetPart))
+                {
+
+                    writer.WriteStartElement(new Worksheet());
+                    writer.WriteStartElement(new SheetData());
+
+                    //Create header row
+
+                    for (int i = 0; i < 1000000; i++)
+                    {
+                        writer.WriteStartElement(new Row());
+                        for (int j = 0; j < 4; j++)
+                        {
+                            openXmlExportHelper.WriteCellValueSax(writer, a[i, j], CellValues.InlineString);
+                        }
+
+                        writer.WriteEndElement(); //end of Row tag
+
+                    }
+
+
+
+                    writer.WriteEndElement(); //end of SheetData
+                    writer.WriteEndElement(); //end of worksheet
+                    writer.Close();
+                }
+
+
+                //create the share string part using sax like approach too
+                openXmlExportHelper.CreateShareStringPart(workbookPart);
+            }
+            stopWatch.Stop();
+
+            Console.WriteLine(string.Format("Time elapsed for writing 1 million rows: {0}", stopWatch.Elapsed));
+            Console.ReadLine();
+
+
+
+
+
+        }
+    }
+}
