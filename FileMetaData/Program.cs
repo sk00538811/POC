@@ -39,6 +39,8 @@ namespace FileMetaData
                 Console.WriteLine("8 - opensource Convert doc,xls and ppt file to docx, xlsx, and pptx");
                 Console.WriteLine("9 - DocumentSecurity Token API");
                 Console.WriteLine("10 - Call DocumentSecurity api/Account/CurrentUser API");
+                Console.WriteLine("11 - Image file Apply Metadata");
+                Console.WriteLine("12 - Image file Read Metadata");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
@@ -177,12 +179,13 @@ namespace FileMetaData
                             // "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181013/a7648575-62bc-4ed2-8151-1d69ffd69a4a.zip";
                             //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/221dc991-ae8c-4a10-8108-1c95a0723fdf.zip";
                             string sourceFileUrl = /*Console.ReadLine();//*/ "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
+                            sourceFileUrl = "http://local.macmillanlearning.com/catalog//Workarea/images/testfile/Table_1-1.zip";
                             string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
                             string api_requestUri = "Metadata/Apply";
                             MetadataParamBatch oMetadataParamBatch = new MetadataParamBatch();
-                            oMetadataParamBatch.UserRAId = "1212";
+                            oMetadataParamBatch.UserId = "1212";
                             List<MetadataParam> lstMetaDataParam = new List<MetadataParam>();
-                            lstMetaDataParam.Add(new MetadataParam { documentType = DocumentType.Word, InputFileName = sourceFileUrl, ResourceType = "IR", ResourceName = "test" });
+                            lstMetaDataParam.Add(new MetadataParam { documentType = DocumentType.ZIP, InputFileName = sourceFileUrl, ResourceType = "IR", ResourceName = "test" });
                             oMetadataParamBatch.MetadataParams = lstMetaDataParam;
                             List<DocumentData> metadataCollection = new List<DocumentData>(){
                                 new DocumentData{Key="CopyRight", Text="2018" },
@@ -210,8 +213,8 @@ namespace FileMetaData
                             string sourceFileUrl = Console.ReadLine(); //"http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
                             string api_baseAddressUrl = "http://local.macmillanlearning.com/DocumentSecurityService/";
                             string api_requestUri = "Metadata/Read";
-                            MetadataParamWithDocumnetData parameters = new MetadataParamWithDocumnetData();
-                            parameters.documentType = DocumentType.Word;
+                            MetadataParamBatch parameters = new MetadataParamBatch();
+
                             List<DocumentData> metadataCollection = new List<DocumentData>(){
                                 new DocumentData{Key="CopyRight" },
                                 new DocumentData{Key="CompanyName" },
@@ -223,8 +226,17 @@ namespace FileMetaData
 
                             Console.WriteLine(sourceFileUrl);
                             Console.WriteLine("");
-                            parameters.OutputFileName = sourceFileUrl;
-                            parameters.documentType = DocumentType.ZIP;
+                            List<MetadataParam> metadataParams = new List<MetadataParam>();
+                            metadataParams.Add(new MetadataParam()
+                            {
+                                documentType = DocumentType.JPEG,
+                                InputFileName = sourceFileUrl,
+                                OutputFileName=sourceFileUrl,
+                                ResourceName = "test"
+                            });
+                            parameters.MetadataParams = metadataParams;
+
+                            
                             string strresult = Webapicall_ReadMetaData(api_baseAddressUrl, api_requestUri, parameters);
                             Console.WriteLine("-----------------output------------------------");
                             Console.WriteLine(strresult);
@@ -304,12 +316,110 @@ namespace FileMetaData
                             string apiBaseUri = "http://localhost";
                             string webAPIUrl = "DocumentSecurity.WebService/api/Account/CurrentUser";
                             Console.Write("\n Enter Token: ");
-                          string  token = Console.ReadLine();
-                            if(string.IsNullOrEmpty(token))
-                              token=GlobalAPITken;
-                            string result = GetCurrentUserDetail(apiBaseUri, webAPIUrl,token).Result;
+                            string token = Console.ReadLine();
+                            if (string.IsNullOrEmpty(token))
+                                token = GlobalAPITken;
+                            string result = GetCurrentUserDetail(apiBaseUri, webAPIUrl, token).Result;
                             Console.WriteLine("-----------------output------------------------");
                             Console.WriteLine(result);
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "11":
+                        {
+                             string sourceFileUrl = /*Console.ReadLine();//*/ "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
+                            sourceFileUrl = "http://local.macmillanlearning.com/catalog//Workarea/images/testfile/Table_1-1.zip";
+                             MetadataParamBatch oMetadataParamBatch = new MetadataParamBatch();
+                            oMetadataParamBatch.UserId = "1212";
+                            List<MetadataParam> lstMetaDataParam = new List<MetadataParam>();
+                            lstMetaDataParam.Add(new MetadataParam { documentType = DocumentType.ZIP, InputFileName = sourceFileUrl, ResourceType = "IR", ResourceName = "test" });
+                            oMetadataParamBatch.MetadataParams = lstMetaDataParam;
+                            List<DocumentData> metadataCollection = new List<DocumentData>(){
+                                new DocumentData{Key="CopyRight", Text="2018" },
+                                new DocumentData{Key="CompanyName" , Text="Macmillan Learning"},
+                                new DocumentData{Key="CreatedOn", Text="16-Nov-2018" },
+                                new DocumentData{Key="RequestId" , Text="11111"},
+                                new DocumentData{Key="RequestDate" , Text="16-Nov-2018"} };
+
+                            oMetadataParamBatch.MetadataCollection = metadataCollection;
+
+                             //fi= new FileInfo(@"C:\Users\sk00538811\Pictures\[30-nov-2018] error-catalog.png");
+                             fi= new FileInfo(@"C:\Users\sk00538811\Pictures\14THCARTOON.gif");
+                            Console.WriteLine(fi.FullName);
+                            Console.WriteLine("");
+                            MetadataResult objresult = null;
+                            switch (fi.Extension.ToUpper()) {
+                                case ".JPG":
+                                    { objresult = new Security.Metadata.DocumentTypes.JPEGImageDocument().ApplyMetaData(fi.FullName, fi.FullName.ToUpper().Replace(".JPG","_Copy.JPG"), oMetadataParamBatch.MetadataCollection); }
+                                    break;
+                                case ".JPEG":
+                                    { objresult = new Security.Metadata.DocumentTypes.JPEGImageDocument().ApplyMetaData(fi.FullName, fi.FullName.ToUpper().Replace(".JPEG","_Copy.JPEG"), oMetadataParamBatch.MetadataCollection); }
+                                    break;
+                                case ".BMP":
+                                    { objresult = new Security.Metadata.DocumentTypes.JPEGImageDocument().ApplyMetaData(fi.FullName, fi.FullName.ToUpper().Replace(".BMP", "_Copy.BMP"), oMetadataParamBatch.MetadataCollection); }
+                                    break;
+                                case ".GIF":
+                                    { objresult = new Security.Metadata.DocumentTypes.JPEGImageDocument().ApplyMetaData(fi.FullName, fi.FullName.ToUpper().Replace(".GIF", "_Copy.GIF"), oMetadataParamBatch.MetadataCollection); }
+                                    break;
+                                case ".PNG":
+                                    { objresult = new Security.Metadata.DocumentTypes.PNGImageDocument().ApplyMetaData(fi.FullName, fi.FullName.ToUpper().Replace(".PNG","_Copy.PNG"), oMetadataParamBatch.MetadataCollection); }
+                                    break;
+
+                            }
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(JsonConvert.SerializeObject(objresult));
+
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                   case "12":
+                        {
+                             string sourceFileUrl = /*Console.ReadLine();//*/ "http://dev-s3c-webpub.s3.amazonaws.com/dev/bcs-test/Catalog-IR/20181011/w.docx";
+                            sourceFileUrl = "http://local.macmillanlearning.com/catalog//Workarea/images/testfile/Table_1-1.zip";
+                             MetadataParamBatch oMetadataParamBatch = new MetadataParamBatch();
+                            oMetadataParamBatch.UserId = "1212";
+                            List<MetadataParam> lstMetaDataParam = new List<MetadataParam>();
+                            lstMetaDataParam.Add(new MetadataParam { documentType = DocumentType.ZIP, InputFileName = sourceFileUrl, ResourceType = "IR", ResourceName = "test" });
+                            oMetadataParamBatch.MetadataParams = lstMetaDataParam;
+                            List<DocumentData> metadataCollection = new List<DocumentData>(){
+                                new DocumentData{Key="CopyRight", Text="2018" },
+                                new DocumentData{Key="CompanyName" , Text="Macmillan Learning"},
+                                new DocumentData{Key="CreatedOn", Text="16-Nov-2018" },
+                                new DocumentData{Key="RequestId" , Text="11111"},
+                                new DocumentData{Key="RequestDate" , Text="16-Nov-2018"} };
+
+                            oMetadataParamBatch.MetadataCollection = metadataCollection;
+
+                            List<string> reqMetadataCollection = new List<string>(){
+                                "CopyRight",
+                                "CompanyName" ,
+                                "CreatedOn",
+                                "RequestId" ,
+                                "RequestDate"  
+                            };
+                            
+                          //  fi= new FileInfo(@"C:\Users\sk00538811\Pictures\[30-nov-2018] error-catalog_copy.png");
+                            fi = new FileInfo(@"C:\Users\sk00538811\Pictures\14THCARTOON_copy.gif");
+                            Console.WriteLine(fi.FullName);
+                            Console.WriteLine("");
+                            MetadataResult objresult = null;
+                            switch (fi.Extension.ToUpper()) {
+                                case ".JPG":
+                                case ".JPEG":
+                                case ".BMP":
+                                case ".GIF":
+                                    { objresult = new Security.Metadata.DocumentTypes.JPEGImageDocument().ReadMetaData(fi.FullName, reqMetadataCollection); }
+                                    break;
+                                case ".PNG":
+                                    { objresult = new Security.Metadata.DocumentTypes.PNGImageDocument().ReadMetaData(fi.FullName, reqMetadataCollection); }
+                                    break;
+
+                            }
+                            Console.WriteLine("-----------------output------------------------");
+                            Console.WriteLine(JsonConvert.SerializeObject(objresult));
 
                             Console.WriteLine("Press Enter key to return main menu...");
                             Console.ReadLine();
@@ -366,28 +476,28 @@ namespace FileMetaData
             {
 
                 //setup client
-               // client.BaseAddress = new Uri(apiBaseUri);
-               // client.DefaultRequestHeaders.Accept.Clear();
-               // client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-               // client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                // client.BaseAddress = new Uri(apiBaseUri);
+                // client.DefaultRequestHeaders.Accept.Clear();
+                // client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                // client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                 //setup login data
                 var formContent = new FormUrlEncodedContent(new[]
                       {
-                      new KeyValuePair<string, string>("?", "?"), 
+                      new KeyValuePair<string, string>("?", "?"),
                       });
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, apiBaseUri +"/"+ webAPIUrl);
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer",  token);
-             
-               // request.Content=   new StringContent(null, Encoding.UTF8, "application/json");
-               //send request
-               HttpResponseMessage responseMessage = client.SendAsync(request).Result; 
-                
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, apiBaseUri + "/" + webAPIUrl);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                // request.Content=   new StringContent(null, Encoding.UTF8, "application/json");
+                //send request
+                HttpResponseMessage responseMessage = client.SendAsync(request).Result;
+
                 if (responseMessage.IsSuccessStatusCode)
                 {
                     //get access token from response body
                     result = await responseMessage.Content.ReadAsStringAsync();
-                     
+
                 }
             }
 
@@ -419,7 +529,7 @@ namespace FileMetaData
                     Task<string> response = httpResponseMessage.Content.ReadAsStringAsync();
 
 
-                    MetadataResultList bsObj = JsonConvert.DeserializeObject<MetadataResultList>(response.Result.ToString());
+                    MetadataResult bsObj = JsonConvert.DeserializeObject<MetadataResult>(response.Result.ToString());
                     strresult = JsonConvert.SerializeObject(bsObj);
 
 
@@ -429,7 +539,7 @@ namespace FileMetaData
             catch { }
             return strresult;
         }
-        private static string Webapicall_ReadMetaData(string baseAddressUrl, string requestUri, MetadataParamWithDocumnetData param)
+        private static string Webapicall_ReadMetaData(string baseAddressUrl, string requestUri, MetadataParamBatch param)
         {
             string strresult = String.Empty;
 
@@ -455,7 +565,7 @@ namespace FileMetaData
                     Task<string> response = httpResponseMessage.Content.ReadAsStringAsync();
 
 
-                    MetadataResultList bsObj = JsonConvert.DeserializeObject<MetadataResultList>(response.Result.ToString());
+                    MetadataResult bsObj = JsonConvert.DeserializeObject<MetadataResult>(response.Result.ToString());
                     strresult = JsonConvert.SerializeObject(bsObj);
 
 
