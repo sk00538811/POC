@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace FileZipUnzip
@@ -16,6 +17,7 @@ namespace FileZipUnzip
 
             do
             {
+                
                 Console.Clear();
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine("1 - Zip files");
@@ -33,7 +35,7 @@ namespace FileZipUnzip
                 switch (input.KeyChar.ToString())
                 {
                     case "1":
-                        Console.Write("\nEnter folder path to zip all file into one: ");
+                         Console.Write("\nEnter folder path to zip all file into one: ");
                         filesfolder = Console.ReadLine();
                         Console.WriteLine(string.Format("\nZip File Generate Start time:{0}, files folder", DateTime.Now.ToString("o"), filesfolder));
                         zipfilepath = FnZipFiles(filesfolder);
@@ -147,7 +149,7 @@ namespace FileZipUnzip
                 foreach (FileInfo fi in di.GetFiles("*.*", SearchOption.AllDirectories))
                 {
                     // add   file  in the zip archive
-                    zip.AddFile(fi.FullName);
+                    zip.AddFile(fi.FullName, RemoveInvalidCharaterFromFolderName(fi.Directory.Name));
                     sb.Append(string.Format("{0}{1}\t{2}\t{3} byte", Environment.NewLine, cnt, fi.Name, fi.Length));
                     cnt++;
                 }
@@ -158,6 +160,14 @@ namespace FileZipUnzip
             }
             return zipfilepath;
         }
+
+        private static string RemoveInvalidCharaterFromFolderName(string str)
+        {
+            // avoid "\\", "/", ":", "*", "?", "\"", "<", ">", "|"  
+            //allow  range a-z, A-Z, 0-9, _ and . only
+            return Regex.Replace(str, "[^(a-z)(A-Z)(0-9)_.-]+", "", RegexOptions.Compiled);
+        }
+
         /// <summary>
         /// Description: this method use given zip file path and unzip all file and return unzip file folder path
         /// </summary>
