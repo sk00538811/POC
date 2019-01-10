@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace FileZipUnzip
 
             do
             {
-                
+
                 Console.Clear();
                 Console.WriteLine("-----------------------------------");
                 Console.WriteLine("1 - Zip files");
@@ -25,6 +26,7 @@ namespace FileZipUnzip
                 Console.WriteLine("3 - split zip file");
                 Console.WriteLine("4 - Compress text");
                 Console.WriteLine("5 - Decompress text");
+                Console.WriteLine("6 -downlod file and output file");
                 Console.WriteLine("0 - Exist");
                 Console.WriteLine("-----------------------------------");
                 Console.Write("Enter your choice: ");
@@ -35,13 +37,15 @@ namespace FileZipUnzip
                 switch (input.KeyChar.ToString())
                 {
                     case "1":
-                         Console.Write("\nEnter folder path to zip all file into one: ");
-                        filesfolder = Console.ReadLine();
-                        Console.WriteLine(string.Format("\nZip File Generate Start time:{0}, files folder", DateTime.Now.ToString("o"), filesfolder));
-                        zipfilepath = FnZipFiles(filesfolder);
-                        Console.WriteLine(string.Format("Zip File Generate End time:{0} , file path:{1}", DateTime.Now.ToString("o"), zipfilepath));
-                        Console.WriteLine("Press Enter key to return main menu...");
-                        Console.ReadLine();
+                        {
+                            Console.Write("\nEnter folder path to zip all file into one: ");
+                            filesfolder = Console.ReadLine();
+                            Console.WriteLine(string.Format("\nZip File Generate Start time:{0}, files folder", DateTime.Now.ToString("o"), filesfolder));
+                            zipfilepath = FnZipFiles(filesfolder);
+                            Console.WriteLine(string.Format("Zip File Generate End time:{0} , file path:{1}", DateTime.Now.ToString("o"), zipfilepath));
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
                         break;
 
                     case "2":
@@ -109,6 +113,27 @@ namespace FileZipUnzip
                             }
                             else { Console.WriteLine("\nFile not exist or invalid file path."); }
 
+                            Console.WriteLine("Press Enter key to return main menu...");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case "6":
+                        {
+                            string userid = "1111";
+                            string inputfileurl = @"https://www.tineye.com//images/imageurl-ie.jpg";
+                            string tempFile = DownloadFileFromServer(inputfileurl, userid);
+                            FileInfo fi = new FileInfo(tempFile);
+
+                            if (!string.IsNullOrEmpty(tempFile) && fi.Exists)
+                            {
+                                string outputFileName = GetOutputFilePath(tempFile, userid);
+                                if (new FileInfo(outputFileName).Exists)
+                                {
+                                    Console.WriteLine("output file: " + outputFileName);
+                                }
+                                else { Console.WriteLine("output file not exist"); }
+                            }
+                            else { Console.WriteLine("Invalid temp file"); }
                             Console.WriteLine("Press Enter key to return main menu...");
                             Console.ReadLine();
                         }
@@ -279,6 +304,70 @@ namespace FileZipUnzip
             }
 
             return $"{size} {suffix}";
+        }
+        static string GetOutputFilePath(string tempFile, string userId)
+        {
+            string TempFileoutPath = @"C:\DocumentSecurity\Files\Output\"; //CommonSettings.AppSetting.TempOutputFilePath;
+            string[] s3SubDir = tempFile.Split('/');
+            string subFolder = TempFileoutPath + userId;
+
+            if (!Directory.Exists(subFolder))
+            {
+                Directory.CreateDirectory(subFolder);
+            }
+
+            for (int ctr = 0; ctr < s3SubDir.Length - 1; ctr++)
+            {
+                subFolder = subFolder + " / " + s3SubDir[ctr];
+
+                if (!Directory.Exists(subFolder))
+                {
+                    Directory.CreateDirectory(subFolder);
+                }
+            }
+
+            string outputFileName = subFolder + "\\" + tempFile.Split('\\').LastOrDefault();
+            File.Copy(tempFile, outputFileName, true);
+            return outputFileName;
+        }
+        static string DownloadFileFromServer(string url, string userId)
+        {
+            string TempFilePath = @"C:\DocumentSecurity\Files\Input\";// CommonSettings.AppSetting.TempFilePath;
+            string fileName = string.Empty;
+
+            try
+            {
+                fileName = url.Split('/').LastOrDefault();
+
+                using (WebClient wc = new WebClient())
+                {
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        fileName = TempFilePath + userId + "\\" + fileName;
+                        if (!Directory.Exists(TempFilePath + userId))
+                        {
+                            Directory.CreateDirectory(TempFilePath + userId);
+                        }
+
+                        if (File.Exists(fileName))
+                        {
+                            File.Delete(fileName);
+
+                        }
+                        wc.DownloadFile(url, fileName);
+                    }
+                    else
+                    {
+                        return string.Empty;
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                fileName = string.Empty;
+            }
+
+            return fileName;
         }
     }
 }
